@@ -1,0 +1,661 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+:root {
+  color-scheme: light dark;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  --photon-motion-micro: 80ms;
+  --photon-motion-quick: 150ms;
+  --photon-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --photon-chrome-height: 72px;
+  --photon-chrome-padding: 8px;
+  --photon-chrome-gap: 4px;
+  --photon-radius-control: 8px;
+  --photon-surface: #f3f4f4;
+  --photon-surface-raised: #e5e7e8;
+  --photon-surface-hover: #d9dcdd;
+  --photon-border: #d7d9da;
+  --photon-foreground: #36393b;
+  --photon-muted: #85898b;
+  --photon-address-foreground: #252728;
+  --photon-address-icon: #252728;
+  --photon-danger: #c73838;
+  --photon-on-danger: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --photon-surface: #202223;
+    --photon-surface-raised: #363839;
+    --photon-surface-hover: #424546;
+    --photon-border: #383b3c;
+    --photon-foreground: #d7d9da;
+    --photon-muted: #5f6365;
+    --photon-address-foreground: #e8e9e9;
+    --photon-address-icon: #f0f1f1;
+    --photon-radius-control: 8px;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --photon-surface: #f3f4f4;
+  --photon-surface-raised: #e5e7e8;
+  --photon-surface-hover: #d9dcdd;
+  --photon-border: #d7d9da;
+  --photon-foreground: #36393b;
+  --photon-muted: #85898b;
+  --photon-address-foreground: #252728;
+  --photon-address-icon: #252728;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --photon-surface: #202223;
+  --photon-surface-raised: #363839;
+  --photon-surface-hover: #424546;
+  --photon-border: #383b3c;
+  --photon-foreground: #d7d9da;
+  --photon-muted: #5f6365;
+  --photon-address-foreground: #e8e9e9;
+  --photon-address-icon: #f0f1f1;
+}
+
+body {
+  background: transparent;
+  overflow: hidden;
+}
+
+.photon-chrome {
+  position: relative;
+  z-index: 1;
+  height: var(--photon-chrome-height);
+  background: var(--photon-surface);
+}
+
+.photon-titlebar {
+  display: flex;
+  width: 100%;
+  height: 36px;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--photon-chrome-padding);
+  background: var(--photon-surface);
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.photon-tab,
+.photon-tab-layout,
+.photon-tab-close,
+.photon-new-tab,
+.photon-new-tab-layout,
+.photon-window-controls,
+.photon-window-control {
+  -webkit-app-region: no-drag;
+}
+
+.photon-tab-strip {
+  display: flex;
+  position: relative;
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 0;
+  height: 100%;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.photon-tab-reorder-group {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.photon-tab-layout {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  max-width: 240px;
+  flex: 1 1 180px;
+  cursor: grab;
+  user-select: none;
+}
+
+.photon-tab-layout:active {
+  cursor: grabbing;
+}
+
+.photon-tab {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 32px;
+  min-width: 0;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+  overflow: hidden;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--photon-radius-control);
+  color: var(--photon-muted);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-tab:hover {
+  background: var(--photon-surface-hover);
+  color: var(--photon-foreground);
+}
+
+.photon-tab-active {
+  background: transparent;
+  color: var(--photon-foreground);
+}
+
+.photon-tab-active:hover {
+  background: transparent;
+}
+
+.photon-tab-active-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--photon-surface-raised);
+  pointer-events: none;
+}
+
+.photon-tab-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+}
+
+.photon-tab-icon {
+  position: relative;
+  display: grid;
+  flex: 0 0 14px;
+  place-items: center;
+}
+
+.photon-tab-icon img {
+  display: block;
+  border-radius: calc(var(--photon-radius-control) / 2);
+}
+
+.photon-tab-favicon {
+  position: absolute;
+  inset: 0;
+  background: var(--photon-surface-raised);
+}
+
+.photon-tab-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.photon-tab-close {
+  display: grid;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--photon-radius-control);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-tab-close:active,
+.photon-new-tab:active,
+.photon-window-control:active {
+  transform: scale(0.96);
+}
+
+.photon-tab-close:hover {
+  background: var(--photon-surface-hover);
+}
+
+.photon-new-tab {
+  flex: 0 0 auto;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--photon-foreground);
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-new-tab-layout {
+  flex: 0 0 auto;
+}
+
+.photon-new-tab:hover,
+.photon-new-tab[data-hovered="true"],
+.photon-new-tab:active,
+.photon-new-tab[data-pressed="true"] {
+  background: var(--photon-surface-hover) !important;
+}
+
+.photon-window-controls {
+  display: flex;
+  flex: 0 0 auto;
+  height: 100%;
+  align-items: center;
+}
+
+.photon-window-control {
+  display: grid;
+  width: 42px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--photon-foreground);
+  cursor: pointer;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-window-control:hover {
+  background: var(--photon-surface-hover);
+}
+
+.photon-window-control-close:hover {
+  background: var(--photon-danger);
+  color: var(--photon-on-danger);
+}
+
+.photon-toolbar {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+  padding: 0 var(--photon-chrome-padding);
+  background: var(--photon-surface);
+}
+
+.photon-navigation-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--photon-chrome-gap);
+}
+
+.photon-toolbar-button {
+  background: transparent !important;
+  border-radius: var(--photon-radius-control);
+  color: var(--photon-foreground);
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-toolbar-button:hover,
+.photon-toolbar-button[data-hovered="true"] {
+  background: var(--photon-surface-hover) !important;
+}
+
+.photon-toolbar-button:active,
+.photon-toolbar-button[data-pressed="true"] {
+  background: transparent !important;
+  color: var(--photon-foreground);
+  transform: scale(0.96);
+}
+
+.photon-toolbar-button[data-disabled="true"] {
+  color: var(--photon-muted);
+}
+
+.photon-downloads-button {
+  position: relative;
+}
+
+.photon-downloads-indicator {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--photon-foreground);
+}
+
+.photon-downloads-popover {
+  width: 330px;
+  max-height: min(480px, calc(100vh - 110px));
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--photon-border);
+  border-radius: 14px;
+  background: var(--photon-surface-raised);
+  color: var(--photon-foreground);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 36%);
+}
+
+.photon-downloads-content {
+  padding: 18px 16px;
+}
+
+.photon-downloads-content h2 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.photon-downloads-list {
+  display: grid;
+  max-height: 282px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.photon-download-row {
+  display: grid;
+  gap: 8px;
+  padding: 14px 12px;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 5%);
+  font-size: 13px;
+}
+
+.photon-download-heading,
+.photon-download-meta,
+.photon-download-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.photon-download-heading span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photon-download-heading span:first-child,
+.photon-download-meta span:first-child {
+  flex: 1;
+}
+
+.photon-download-meta,
+.photon-download-row p {
+  margin: 0;
+  color: var(--photon-muted);
+}
+
+.photon-download-failed {
+  color: var(--photon-danger) !important;
+}
+
+.photon-download-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--photon-border);
+}
+
+.photon-download-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--photon-foreground);
+  transition: width 120ms linear;
+}
+
+.photon-download-progress:has(span:not([style])) span {
+  width: 45%;
+  animation: photon-downloads-indeterminate 1.2s ease-in-out infinite;
+}
+
+.photon-download-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--photon-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.photon-download-action:hover {
+  color: var(--photon-foreground);
+}
+
+@keyframes photon-downloads-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes photon-downloads-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.photon-omnibox-form,
+.photon-omnibox-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.photon-omnibox-wrap {
+  position: relative;
+}
+
+.photon-address-input {
+  width: 100%;
+  height: 34px;
+  padding-left: 42px;
+  border: 1px solid transparent;
+  border-radius: var(--photon-radius-control);
+  background: var(--photon-surface-raised) !important;
+  color: var(--photon-address-foreground) !important;
+  box-shadow: none !important;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    border-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-address-input:hover {
+  background: var(--photon-surface-hover) !important;
+}
+
+.photon-address-input:focus {
+  border-color: var(--photon-border);
+  background: var(--photon-surface-hover) !important;
+}
+
+.photon-address-icon {
+  color: var(--photon-address-icon);
+}
+
+.photon-viewport {
+  position: absolute;
+  top: var(--photon-chrome-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.photon-new-tab-page {
+  display: grid;
+  place-items: center;
+  background: var(--photon-surface);
+}
+
+.photon-new-tab-content {
+  display: grid;
+  width: min(560px, calc(100% - 40px));
+  gap: 22px;
+  justify-items: center;
+  transform: translateY(-8vh);
+}
+
+.photon-new-tab-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photon-new-tab-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.photon-new-tab-content h1 {
+  margin: 0;
+  color: var(--photon-foreground);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.photon-new-tab-form {
+  position: relative;
+  width: 100%;
+}
+
+.photon-new-tab-form .photon-new-tab-icon {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  z-index: 1;
+  color: var(--photon-address-icon);
+  transform: translateY(-50%);
+}
+
+.photon-new-tab-form input {
+  width: 100%;
+  height: 46px;
+  padding-left: 48px;
+  border: 1px solid var(--photon-border);
+  border-radius: 12px;
+  background: var(--photon-surface-raised) !important;
+  color: var(--photon-address-foreground) !important;
+  box-shadow: none !important;
+}
+
+.photon-settings-page {
+  background: var(--photon-surface);
+}
+
+.photon-settings-content {
+  width: min(680px, calc(100% - 48px));
+  margin: 0 auto;
+  padding-top: 48px;
+  color: var(--photon-foreground);
+}
+
+.photon-settings-content h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.photon-settings-content p {
+  margin: 12px 0 0;
+  color: var(--photon-muted);
+  font-size: 14px;
+}
+
+.photon-settings-row {
+  display: flex;
+  max-width: 560px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 32px;
+  padding: 16px 0;
+  border-top: 1px solid var(--photon-border);
+  color: var(--photon-foreground);
+}
+
+.photon-settings-row span {
+  display: grid;
+  gap: 5px;
+}
+
+.photon-settings-row small {
+  color: var(--photon-muted);
+  font-size: 13px;
+}
+
+.photon-settings-row select {
+  min-width: 110px;
+  padding: 7px 10px;
+  border: 1px solid var(--photon-border);
+  border-radius: var(--photon-radius-control);
+  background: var(--photon-surface-raised);
+  color: var(--photon-foreground);
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photon-tab,
+  .photon-tab-close,
+  .photon-new-tab,
+  .photon-window-control,
+  .photon-toolbar-button,
+  .photon-address-input,
+  .photon-tab-active-background {
+    transition: none;
+  }
+}

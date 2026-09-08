@@ -1,0 +1,56 @@
+import { defineConfig } from "eslint/config"
+import tseslint from "@electron-toolkit/eslint-config-ts"
+import eslintConfigPrettier from "@electron-toolkit/eslint-config-prettier"
+import eslintPluginReact from "eslint-plugin-react"
+import eslintPluginReactHooks from "eslint-plugin-react-hooks"
+import eslintPluginReactRefresh from "eslint-plugin-react-refresh"
+
+export default defineConfig(
+  { ignores: ["**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", ".heroui-docs/**"] },
+  tseslint.configs.recommended,
+  eslintPluginReact.configs.flat.recommended,
+  eslintPluginReact.configs.flat["jsx-runtime"],
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      "react-hooks": eslintPluginReactHooks,
+      "react-refresh": eslintPluginReactRefresh,
+    },
+    rules: {
+      ...eslintPluginReactHooks.configs.recommended.rules,
+      ...eslintPluginReactRefresh.configs.vite.rules,
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  {
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+  },
+  eslintConfigPrettier,
+)
