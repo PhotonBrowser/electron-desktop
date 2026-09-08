@@ -20,6 +20,17 @@ Photon is a custom browser built with Electron.
 - Renderer never accesses Node directly.
 - Tab is not a WebContentsView; browser state and renderer lifecycle stay separate.
 
+## Native view composition
+
+- CSS z-index never controls WebContentsView stacking.
+- WindowComposition is the only owner of the BrowserWindow child-view hierarchy.
+- TabManager owns page views but does not attach or lay them out directly.
+- Permanent browser chrome stays outside webpage bounds.
+- UI crossing webpage bounds uses the dedicated PhotonOverlayView.
+- Overlay bounds should be as small as practical to avoid blocking website input.
+- Websites never receive Photon preload or privileged IPC.
+- No direct BrowserWindow child-view manipulation exists outside WindowComposition.
+
 ## Code
 
 - Keep modules focused and preferably at or below 300 lines.

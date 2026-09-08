@@ -20,5 +20,13 @@ export default defineConfig({
       alias: aliases,
     },
     plugins: [react(), tailwindcss()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve("src/renderer/index.html"),
+          overlay: resolve("src/renderer/overlay.html"),
+        },
+      },
+    },
   },
 })

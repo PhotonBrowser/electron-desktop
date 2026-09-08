@@ -1,4 +1,5 @@
 import { Copy, Minus, Square, X } from "lucide-react"
+import { IconButton } from "../ui/IconButton"
 import { useBrowserStore } from "../stores/browser-store"
 
 export function WindowControls(): React.JSX.Element | null {
@@ -7,30 +8,37 @@ export function WindowControls(): React.JSX.Element | null {
 
   return (
     <div className="photon-window-controls">
-      <button
-        aria-label="Minimize"
+      <IconButton
+        ariaLabel="Minimize"
         className="photon-window-control"
-        type="button"
-        onClick={() => void window.photon.window.minimize()}
+        size="sm"
+        variant="ghost"
+        onPress={() => void window.photon.window.minimize()}
       >
-        <Minus size={15} />
-      </button>
-      <button
-        aria-label={isMaximized ? "Restore" : "Maximize"}
+        <Minus aria-hidden="true" size={13} />
+      </IconButton>
+      <IconButton
+        ariaLabel={isMaximized ? "Restore window" : "Maximize window"}
         className="photon-window-control"
-        type="button"
-        onClick={() => void window.photon.window.toggleMaximize()}
+        size="sm"
+        variant="ghost"
+        onPress={() => void window.photon.window.toggleMaximize()}
       >
-        {isMaximized ? <Copy size={13} /> : <Square size={13} />}
-      </button>
-      <button
-        aria-label="Close"
+        {isMaximized ? (
+          <Copy aria-hidden="true" size={11} />
+        ) : (
+          <Square aria-hidden="true" size={11} />
+        )}
+      </IconButton>
+      <IconButton
+        ariaLabel="Close window"
         className="photon-window-control photon-window-control-close"
-        type="button"
-        onClick={() => void window.photon.window.close()}
+        size="sm"
+        variant="ghost"
+        onPress={() => void window.photon.window.close()}
       >
-        <X size={15} />
-      </button>
+        <X aria-hidden="true" size={13} />
+      </IconButton>
     </div>
   )
 }

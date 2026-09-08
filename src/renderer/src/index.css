@@ -9,8 +9,14 @@ body,
   margin: 0;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font-family:
     Inter,
     ui-sans-serif,
@@ -19,83 +25,136 @@ body,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --photon-space-1: 4px;
+  --photon-space-2: 8px;
+  --photon-space-3: 12px;
+  --photon-space-4: 16px;
+  --photon-space-5: 20px;
+  --photon-space-6: 24px;
+  --photon-space-8: 32px;
   --photon-motion-micro: 80ms;
   --photon-motion-quick: 150ms;
-  --photon-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --photon-chrome-height: 72px;
-  --photon-chrome-padding: 8px;
-  --photon-chrome-gap: 4px;
+  --photon-motion-enter: 220ms;
+  --photon-motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --photon-titlebar-height: 36px;
+  --photon-toolbar-height: 36px;
+  --photon-chrome-height: calc(var(--photon-titlebar-height) + var(--photon-toolbar-height));
+  --photon-chrome-padding: var(--photon-space-2);
+  --photon-chrome-gap: var(--photon-space-1);
   --photon-radius-control: 8px;
-  --photon-surface: #f3f4f4;
-  --photon-surface-raised: #e5e7e8;
-  --photon-surface-hover: #d9dcdd;
-  --photon-border: #d7d9da;
-  --photon-foreground: #36393b;
-  --photon-muted: #85898b;
-  --photon-address-foreground: #252728;
-  --photon-address-icon: #252728;
-  --photon-danger: #c73838;
-  --photon-on-danger: #ffffff;
+  --photon-radius-field: 10px;
+  --photon-radius-panel: 16px;
+  --photon-color-canvas: #f3f4f4;
+  --photon-color-surface: #e5e7e8;
+  --photon-color-surface-hover: #d9dcdd;
+  --photon-color-border: #d7d9da;
+  --photon-color-text-primary: #252728;
+  --photon-color-text-secondary: #5f6365;
+  --photon-color-accent: #2851b8;
+  --photon-color-on-accent: #ffffff;
+  --photon-color-danger: #c73838;
+  --photon-color-on-danger: #ffffff;
+  --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 10%);
+
+  /* Keep HeroUI components on Photon’s semantic color roles. */
+  --background: var(--photon-color-canvas);
+  --foreground: var(--photon-color-text-primary);
+  --surface: var(--photon-color-surface);
+  --surface-foreground: var(--photon-color-text-primary);
+  --surface-secondary: var(--photon-color-surface);
+  --surface-secondary-foreground: var(--photon-color-text-primary);
+  --surface-tertiary: var(--photon-color-surface-hover);
+  --surface-tertiary-foreground: var(--photon-color-text-primary);
+  --overlay: var(--photon-color-surface);
+  --overlay-foreground: var(--photon-color-text-primary);
+  --muted: var(--photon-color-text-secondary);
+  --default: var(--photon-color-surface-hover);
+  --default-foreground: var(--photon-color-text-primary);
+  --accent: var(--photon-color-accent);
+  --accent-foreground: var(--photon-color-on-accent);
+  --field-background: var(--photon-color-canvas);
+  --field-foreground: var(--photon-color-text-primary);
+  --field-placeholder: var(--photon-color-text-secondary);
+  --field-border: var(--photon-color-border);
+  --border: var(--photon-color-border);
+  --focus: var(--photon-color-accent);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --photon-surface: #202223;
-    --photon-surface-raised: #363839;
-    --photon-surface-hover: #424546;
-    --photon-border: #383b3c;
-    --photon-foreground: #d7d9da;
-    --photon-muted: #5f6365;
-    --photon-address-foreground: #e8e9e9;
-    --photon-address-icon: #f0f1f1;
-    --photon-radius-control: 8px;
+    color-scheme: dark;
+    --photon-color-canvas: #202223;
+    --photon-color-surface: #363839;
+    --photon-color-surface-hover: #424546;
+    --photon-color-border: #383b3c;
+    --photon-color-text-primary: #e8e9e9;
+    --photon-color-text-secondary: #b7bcbe;
+    --photon-color-accent: #aebdff;
+    --photon-color-on-accent: #17234a;
+    --photon-color-danger: #ef8a8a;
+    --photon-color-on-danger: #291010;
+    --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 30%);
   }
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --photon-surface: #f3f4f4;
-  --photon-surface-raised: #e5e7e8;
-  --photon-surface-hover: #d9dcdd;
-  --photon-border: #d7d9da;
-  --photon-foreground: #36393b;
-  --photon-muted: #85898b;
-  --photon-address-foreground: #252728;
-  --photon-address-icon: #252728;
+  --photon-color-canvas: #f3f4f4;
+  --photon-color-surface: #e5e7e8;
+  --photon-color-surface-hover: #d9dcdd;
+  --photon-color-border: #d7d9da;
+  --photon-color-text-primary: #252728;
+  --photon-color-text-secondary: #5f6365;
+  --photon-color-accent: #2851b8;
+  --photon-color-on-accent: #ffffff;
+  --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 10%);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --photon-surface: #202223;
-  --photon-surface-raised: #363839;
-  --photon-surface-hover: #424546;
-  --photon-border: #383b3c;
-  --photon-foreground: #d7d9da;
-  --photon-muted: #5f6365;
-  --photon-address-foreground: #e8e9e9;
-  --photon-address-icon: #f0f1f1;
+  --photon-color-canvas: #202223;
+  --photon-color-surface: #363839;
+  --photon-color-surface-hover: #424546;
+  --photon-color-border: #383b3c;
+  --photon-color-text-primary: #e8e9e9;
+  --photon-color-text-secondary: #b7bcbe;
+  --photon-color-accent: #aebdff;
+  --photon-color-on-accent: #17234a;
+  --photon-color-danger: #ef8a8a;
+  --photon-color-on-danger: #291010;
+  --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 30%);
 }
 
 body {
   background: transparent;
   overflow: hidden;
+  color: var(--photon-color-text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+button,
+input,
+select {
+  font: inherit;
 }
 
 .photon-chrome {
-  position: relative;
-  z-index: 1;
   height: var(--photon-chrome-height);
-  background: var(--photon-surface);
+  background: var(--photon-color-canvas);
 }
 
 .photon-titlebar {
   display: flex;
   width: 100%;
-  height: 36px;
+  height: var(--photon-titlebar-height);
   align-items: center;
   min-width: 0;
-  padding: 0 var(--photon-chrome-padding);
-  background: var(--photon-surface);
+  padding-block: 0;
+  padding-inline: 2px;
+  background: var(--photon-color-canvas);
   overflow: hidden;
   -webkit-app-region: drag;
 }
@@ -144,10 +203,18 @@ body {
   flex: 1 1 180px;
   cursor: grab;
   user-select: none;
+  transition:
+    opacity var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-quick) var(--photon-motion-ease);
 }
 
 .photon-tab-layout:active {
   cursor: grabbing;
+}
+
+.photon-tab-layout[data-dragging="true"] {
+  opacity: 0.65;
+  transform: scale(0.98);
 }
 
 .photon-tab {
@@ -162,22 +229,38 @@ body {
   padding: 0 8px;
   border: 1px solid transparent;
   border-radius: var(--photon-radius-control);
-  color: var(--photon-muted);
+  color: var(--photon-color-text-secondary);
   cursor: pointer;
   user-select: none;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
-    color var(--photon-motion-quick) var(--photon-motion-ease);
+    border-color var(--photon-motion-quick) var(--photon-motion-ease),
+    box-shadow var(--photon-motion-quick) var(--photon-motion-ease),
+    opacity var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-tab-inactive {
+  opacity: 0.72;
+}
+
+.photon-tab-inactive:hover {
+  opacity: 1;
 }
 
 .photon-tab:hover {
-  background: var(--photon-surface-hover);
-  color: var(--photon-foreground);
+  background: var(--photon-color-surface-hover);
+  color: var(--photon-color-text-primary);
+}
+
+.photon-tab-layout[data-drag-over="true"] .photon-tab {
+  border-color: var(--photon-color-border);
+  box-shadow: inset 0 0 0 1px var(--photon-color-border);
 }
 
 .photon-tab-active {
   background: transparent;
-  color: var(--photon-foreground);
+  color: var(--photon-color-text-primary);
+  opacity: 1;
 }
 
 .photon-tab-active:hover {
@@ -189,8 +272,14 @@ body {
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: var(--photon-surface-raised);
+  background: var(--photon-color-surface);
+  opacity: 0;
+  transform: none;
   pointer-events: none;
+}
+
+.photon-tab-active .photon-tab-active-background {
+  opacity: 1;
 }
 
 .photon-tab-content {
@@ -218,7 +307,7 @@ body {
 .photon-tab-favicon {
   position: absolute;
   inset: 0;
-  background: var(--photon-surface-raised);
+  background: var(--photon-color-surface);
 }
 
 .photon-tab-title {
@@ -232,37 +321,41 @@ body {
 
 .photon-tab-close {
   display: grid;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
   border-radius: var(--photon-radius-control);
   background: transparent;
   color: inherit;
   cursor: pointer;
+}
+
+.photon-tab-close:hover {
+  background: var(--photon-color-surface-hover);
+}
+
+.photon-icon-button {
+  will-change: auto;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
     color var(--photon-motion-quick) var(--photon-motion-ease),
     transform var(--photon-motion-micro) var(--photon-motion-ease);
 }
 
-.photon-tab-close:active,
-.photon-new-tab:active,
-.photon-window-control:active {
+.photon-icon-button:active,
+.photon-icon-button[data-pressed="true"] {
   transform: scale(0.96);
-}
-
-.photon-tab-close:hover {
-  background: var(--photon-surface-hover);
 }
 
 .photon-new-tab {
   flex: 0 0 auto;
+  border-radius: var(--photon-radius-control) !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  color: var(--photon-foreground);
+  color: var(--photon-color-text-primary);
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
     color var(--photon-motion-quick) var(--photon-motion-ease),
@@ -277,7 +370,7 @@ body {
 .photon-new-tab[data-hovered="true"],
 .photon-new-tab:active,
 .photon-new-tab[data-pressed="true"] {
-  background: var(--photon-surface-hover) !important;
+  background: var(--photon-color-surface-hover) !important;
 }
 
 .photon-window-controls {
@@ -285,16 +378,18 @@ body {
   flex: 0 0 auto;
   height: 100%;
   align-items: center;
+  gap: var(--photon-chrome-gap);
 }
 
 .photon-window-control {
   display: grid;
-  width: 42px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   border: 0;
+  border-radius: var(--photon-radius-control);
   background: transparent;
-  color: var(--photon-foreground);
+  color: var(--photon-color-text-primary);
   cursor: pointer;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
@@ -303,21 +398,21 @@ body {
 }
 
 .photon-window-control:hover {
-  background: var(--photon-surface-hover);
+  background: var(--photon-color-surface-hover);
 }
 
 .photon-window-control-close:hover {
-  background: var(--photon-danger);
-  color: var(--photon-on-danger);
+  background: var(--photon-color-danger);
+  color: var(--photon-color-on-danger);
 }
 
 .photon-toolbar {
   display: flex;
-  height: 36px;
+  height: var(--photon-toolbar-height);
   align-items: center;
   gap: var(--photon-chrome-gap);
   padding: 0 var(--photon-chrome-padding);
-  background: var(--photon-surface);
+  background: var(--photon-color-canvas);
 }
 
 .photon-navigation-controls {
@@ -330,7 +425,7 @@ body {
 .photon-toolbar-button {
   background: transparent !important;
   border-radius: var(--photon-radius-control);
-  color: var(--photon-foreground);
+  color: var(--photon-color-text-primary);
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
     color var(--photon-motion-quick) var(--photon-motion-ease),
@@ -339,153 +434,18 @@ body {
 
 .photon-toolbar-button:hover,
 .photon-toolbar-button[data-hovered="true"] {
-  background: var(--photon-surface-hover) !important;
+  background: var(--photon-color-surface-hover) !important;
 }
 
 .photon-toolbar-button:active,
 .photon-toolbar-button[data-pressed="true"] {
-  background: transparent !important;
-  color: var(--photon-foreground);
+  background: var(--photon-color-canvas) !important;
+  color: var(--photon-color-text-primary);
   transform: scale(0.96);
 }
 
 .photon-toolbar-button[data-disabled="true"] {
-  color: var(--photon-muted);
-}
-
-.photon-downloads-button {
-  position: relative;
-}
-
-.photon-downloads-indicator {
-  position: absolute;
-  right: 6px;
-  bottom: 5px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--photon-foreground);
-}
-
-.photon-downloads-popover {
-  width: 330px;
-  max-height: min(480px, calc(100vh - 110px));
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid var(--photon-border);
-  border-radius: 14px;
-  background: var(--photon-surface-raised);
-  color: var(--photon-foreground);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 36%);
-}
-
-.photon-downloads-content {
-  padding: 18px 16px;
-}
-
-.photon-downloads-content h2 {
-  margin: 0 0 16px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.photon-downloads-list {
-  display: grid;
-  max-height: 282px;
-  gap: 12px;
-  overflow-y: auto;
-}
-
-.photon-download-row {
-  display: grid;
-  gap: 8px;
-  padding: 14px 12px;
-  border: 1px solid rgb(255 255 255 / 6%);
-  border-radius: 10px;
-  background: rgb(255 255 255 / 5%);
-  font-size: 13px;
-}
-
-.photon-download-heading,
-.photon-download-meta,
-.photon-download-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.photon-download-heading span:first-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.photon-download-heading span:first-child,
-.photon-download-meta span:first-child {
-  flex: 1;
-}
-
-.photon-download-meta,
-.photon-download-row p {
-  margin: 0;
-  color: var(--photon-muted);
-}
-
-.photon-download-failed {
-  color: var(--photon-danger) !important;
-}
-
-.photon-download-progress {
-  height: 4px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: var(--photon-border);
-}
-
-.photon-download-progress span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--photon-foreground);
-  transition: width 120ms linear;
-}
-
-.photon-download-progress:has(span:not([style])) span {
-  width: 45%;
-  animation: photon-downloads-indeterminate 1.2s ease-in-out infinite;
-}
-
-.photon-download-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 0;
-  border: 0;
-  background: transparent;
-  color: var(--photon-foreground);
-  font-size: 12px;
-  cursor: pointer;
-  font: inherit;
-}
-
-.photon-download-action:hover {
-  color: var(--photon-foreground);
-}
-
-@keyframes photon-downloads-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-@keyframes photon-downloads-indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(220%);
-  }
+  color: var(--photon-color-text-secondary);
 }
 
 .photon-omnibox-form,
@@ -503,9 +463,9 @@ body {
   height: 34px;
   padding-left: 42px;
   border: 1px solid transparent;
-  border-radius: var(--photon-radius-control);
-  background: var(--photon-surface-raised) !important;
-  color: var(--photon-address-foreground) !important;
+  border-radius: var(--photon-radius-field);
+  background: var(--photon-color-surface) !important;
+  color: var(--photon-color-text-primary) !important;
   box-shadow: none !important;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
@@ -514,16 +474,38 @@ body {
 }
 
 .photon-address-input:hover {
-  background: var(--photon-surface-hover) !important;
+  background: var(--photon-color-surface-hover) !important;
 }
 
 .photon-address-input:focus {
-  border-color: var(--photon-border);
-  background: var(--photon-surface-hover) !important;
+  border-color: var(--photon-color-border);
+  background: var(--photon-color-surface-hover) !important;
 }
 
-.photon-address-icon {
-  color: var(--photon-address-icon);
+.photon-address-icon-button {
+  position: absolute;
+  z-index: 1;
+  top: 1px;
+  left: 4px;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  border-radius: var(--photon-radius-control) !important;
+  color: var(--photon-color-text-primary);
+}
+
+.photon-address-icon-button:hover,
+.photon-address-icon-button[data-hovered="true"] {
+  background: var(--photon-color-surface-hover) !important;
+}
+
+.photon-address-icon-button:focus-visible {
+  outline: 2px solid var(--photon-color-accent);
+  outline-offset: -2px;
+}
+
+.photon-address-icon-button[data-disabled="true"] {
+  color: var(--photon-color-text-secondary);
 }
 
 .photon-viewport {
@@ -537,13 +519,13 @@ body {
 .photon-new-tab-page {
   display: grid;
   place-items: center;
-  background: var(--photon-surface);
+  background: var(--photon-color-canvas);
 }
 
 .photon-new-tab-content {
   display: grid;
   width: min(560px, calc(100% - 40px));
-  gap: 22px;
+  gap: var(--photon-space-6);
   justify-items: center;
   transform: translateY(-8vh);
 }
@@ -562,10 +544,11 @@ body {
 
 .photon-new-tab-content h1 {
   margin: 0;
-  color: var(--photon-foreground);
+  color: var(--photon-color-text-primary);
   font-size: 32px;
   font-weight: 600;
   letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 .photon-new-tab-form {
@@ -578,7 +561,7 @@ body {
   top: 50%;
   left: 16px;
   z-index: 1;
-  color: var(--photon-address-icon);
+  color: var(--photon-color-text-primary);
   transform: translateY(-50%);
 }
 
@@ -586,76 +569,381 @@ body {
   width: 100%;
   height: 46px;
   padding-left: 48px;
-  border: 1px solid var(--photon-border);
-  border-radius: 12px;
-  background: var(--photon-surface-raised) !important;
-  color: var(--photon-address-foreground) !important;
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-field);
+  background: var(--photon-color-surface) !important;
+  color: var(--photon-color-text-primary) !important;
   box-shadow: none !important;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    border-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-new-tab-form input:hover {
+  background: var(--photon-color-surface-hover) !important;
+}
+
+.photon-new-tab-form input:focus {
+  border-color: var(--photon-color-border);
+  background: var(--photon-color-surface-hover) !important;
 }
 
 .photon-settings-page {
-  background: var(--photon-surface);
+  overflow: auto;
+  background: var(--photon-color-canvas);
 }
 
 .photon-settings-content {
-  width: min(680px, calc(100% - 48px));
+  width: min(640px, calc(100% - (var(--photon-space-6) * 2)));
   margin: 0 auto;
-  padding-top: 48px;
-  color: var(--photon-foreground);
+  padding-block: var(--photon-space-8) 64px;
+  color: var(--photon-color-text-primary);
 }
 
-.photon-settings-content h1 {
+.photon-settings-heading {
+  display: grid;
+  gap: var(--photon-space-2);
+  margin-bottom: var(--photon-space-8);
+}
+
+.photon-settings-heading h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.photon-settings-heading p,
+.photon-settings-copy p {
+  margin: 0;
+  color: var(--photon-color-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.photon-settings-panel {
+  overflow: hidden;
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-panel);
+  background: var(--photon-color-surface);
+  box-shadow: var(--photon-shadow-panel);
+}
+
+.photon-settings-group {
+  display: grid;
+  gap: var(--photon-space-5);
+  padding: var(--photon-space-6);
+}
+
+.photon-settings-group + .photon-settings-group {
+  border-top: 1px solid var(--photon-color-border);
+}
+
+.photon-settings-group-header,
+.photon-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--photon-space-4);
+}
+
+.photon-settings-copy {
+  min-width: 0;
+  display: grid;
+  gap: var(--photon-space-1);
+}
+
+.photon-settings-copy h2,
+.photon-memory-option-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.photon-settings-group-header .photon-settings-copy {
+  flex: 1;
+}
+
+.photon-memory-switch {
+  flex: 0 0 auto;
+}
+
+.photon-memory-switch-content {
+  display: block;
+}
+
+.photon-memory-switch-control {
+  display: block;
+  width: 26px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--photon-color-text-secondary);
+  transition: background-color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-memory-switch[data-selected="true"] .photon-memory-switch-control,
+.photon-memory-switch-content[data-selected="true"] .photon-memory-switch-control {
+  background: var(--photon-color-accent);
+}
+
+.photon-memory-switch-thumb {
+  display: block;
+  width: 12px;
+  height: 12px;
+  margin: 2px;
+  border-radius: 50%;
+  background: var(--photon-color-canvas);
+  box-shadow: var(--photon-shadow-panel);
+  transform: translateX(0);
+  transition: transform var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-memory-switch[data-selected="true"] .photon-memory-switch-thumb,
+.photon-memory-switch-content[data-selected="true"] .photon-memory-switch-thumb {
+  background: var(--photon-color-on-accent);
+  transform: translateX(10px);
+}
+
+.photon-memory-options {
+  display: grid;
+  gap: var(--photon-space-3);
+  transition: opacity var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-memory-option {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: var(--photon-space-3);
+  padding: 0;
+  color: var(--photon-color-text-primary);
+  text-align: start;
+}
+
+.photon-memory-radio-control {
+  display: grid;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  place-items: center;
+  border: 2px solid var(--photon-color-text-secondary);
+  border-radius: 50%;
+  background: transparent;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    border-color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-memory-options .radio[data-selected] .photon-memory-radio-control,
+.photon-memory-option[data-selected="true"] .photon-memory-radio-control,
+.photon-memory-option[aria-checked="true"] .photon-memory-radio-control {
+  background: transparent !important;
+  border-color: var(--photon-color-accent);
+}
+
+.photon-memory-radio-indicator {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  width: auto;
+  height: auto;
+  place-items: center;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+  transform: none;
+}
+
+.photon-memory-radio-indicator:empty::before {
+  background: var(--photon-color-accent) !important;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  scale: none;
+  transform: scale(0.25);
+  transition:
+    opacity var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-memory-options .radio[data-selected] .photon-memory-radio-indicator,
+.photon-memory-option[data-selected="true"] .photon-memory-radio-indicator,
+.photon-memory-option[aria-checked="true"] .photon-memory-radio-indicator {
+  opacity: 1;
+  transform: none;
+}
+
+.photon-memory-options .radio[data-selected] .photon-memory-radio-indicator:empty::before,
+.photon-memory-option[data-selected="true"] .photon-memory-radio-indicator:empty::before,
+.photon-memory-option[aria-checked="true"] .photon-memory-radio-indicator:empty::before {
+  opacity: 1;
+  scale: none;
+  transform: scale(1);
+}
+
+.photon-memory-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.photon-memory-option-title {
   font-weight: 600;
 }
 
-.photon-settings-content p {
-  margin: 12px 0 0;
-  color: var(--photon-muted);
-  font-size: 14px;
+.photon-memory-options[data-disabled="true"] {
+  opacity: 0.5;
 }
 
-.photon-settings-row {
-  display: flex;
-  max-width: 560px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  margin-top: 32px;
-  padding: 16px 0;
-  border-top: 1px solid var(--photon-border);
-  color: var(--photon-foreground);
+.photon-theme-select {
+  flex: 0 0 auto;
+  min-width: 116px;
 }
 
-.photon-settings-row span {
-  display: grid;
-  gap: 5px;
-}
-
-.photon-settings-row small {
-  color: var(--photon-muted);
-  font-size: 13px;
-}
-
-.photon-settings-row select {
-  min-width: 110px;
-  padding: 7px 10px;
-  border: 1px solid var(--photon-border);
+.photon-theme-trigger {
+  min-width: 116px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 var(--photon-space-8) 0 var(--photon-space-3);
   border-radius: var(--photon-radius-control);
-  background: var(--photon-surface-raised);
-  color: var(--photon-foreground);
-  font: inherit;
+  border-color: var(--photon-color-border);
+  background: var(--photon-color-canvas) !important;
+  color: var(--photon-color-text-primary);
+  box-shadow: none;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    border-color var(--photon-motion-quick) var(--photon-motion-ease),
+    color var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-theme-trigger:hover,
+.photon-theme-trigger[data-hovered="true"] {
+  background: var(--photon-color-surface-hover) !important;
+}
+
+.photon-theme-popover {
+  background: var(--photon-color-surface) !important;
+  color: var(--photon-color-text-primary);
+}
+
+.photon-theme-indicator {
+  transition: transform var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-theme-trigger[data-open="true"] .photon-theme-indicator {
+  transform: rotate(180deg);
+}
+
+.photon-viewport {
+  animation: photon-viewport-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
+}
+
+.photon-new-tab-brand,
+.photon-new-tab-form {
+  animation: photon-content-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
+}
+
+.photon-new-tab-form {
+  animation-delay: 60ms;
+}
+
+.photon-tab-favicon {
+  animation: photon-icon-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
+}
+
+.photon-theme-switching,
+.photon-theme-switching *,
+.photon-theme-switching *::before,
+.photon-theme-switching *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.photon-settings-page,
+.photon-settings-page *,
+.photon-settings-page *::before,
+.photon-settings-page *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@keyframes photon-viewport-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes photon-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes photon-icon-enter {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.25);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .photon-tab,
-  .photon-tab-close,
-  .photon-new-tab,
-  .photon-window-control,
-  .photon-toolbar-button,
-  .photon-address-input,
-  .photon-tab-active-background {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .photon-icon-button:active,
+  .photon-icon-button[data-pressed="true"] {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .photon-settings-content {
+    width: 100%;
+    padding: var(--photon-space-6) var(--photon-space-4) 48px;
+  }
+
+  .photon-settings-group {
+    padding: var(--photon-space-4);
+  }
+
+  .photon-settings-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .photon-theme-select,
+  .photon-theme-trigger {
+    width: 100%;
   }
 }

@@ -13,6 +13,10 @@
     "test:navigation": "node --experimental-strip-types --test src/main/browser/navigation-url.test.mts",
     "test:internal-pages": "node --experimental-strip-types --test src/main/browser/internal-pages.test.mts",
     "test:downloads": "node --experimental-strip-types --test src/main/browser/download-filename.test.mts",
+    "test:site-security": "node --experimental-strip-types --test src/shared/site-security.test.mts",
+    "test:tabs": "node --experimental-strip-types --test src/main/browser/tab-manager.test.mts",
+    "test:layout": "node --experimental-strip-types --test src/main/window/browser-layout.test.mts",
+    "test:shortcuts": "node --experimental-strip-types --test src/main/window/browser-shortcuts.test.mts",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
@@ -29,7 +33,6 @@
     "@heroui/react": "^3.2.4",
     "@heroui/styles": "^3.2.4",
     "lucide-react": "^1.42.0",
-    "motion": "^13.2.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

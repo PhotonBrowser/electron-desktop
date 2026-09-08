@@ -1,13 +1,11 @@
-export const CHROME_LAYOUT = {
-  titlebarHeight: 36,
-  toolbarHeight: 36,
-  contentTop: 72,
-  contentInset: 4,
-  contentRadius: 4,
-} as const
-
 export type TabId = string & { readonly __tabId: unique symbol }
 export type DownloadId = string & { readonly __downloadId: unique symbol }
+export type MemorySaverLevel = "moderate" | "balanced" | "maximum"
+
+export interface MemorySaverSettings {
+  enabled: boolean
+  level: MemorySaverLevel
+}
 
 export type DownloadState =
   "starting" | "progressing" | "paused" | "completed" | "cancelled" | "interrupted"
@@ -32,20 +30,49 @@ export interface BrowserTab {
   title: string
   faviconUrl?: string
   loading: boolean
+  lifecycleState: "active" | "frozen"
   canGoBack: boolean
   canGoForward: boolean
 }
 
 export interface PhotonSnapshot {
+  revision: number
   tabs: BrowserTab[]
   activeTabId: TabId
   isMaximized: boolean
+}
+
+export interface BrowserTabChanges {
+  kind?: BrowserTab["kind"]
+  internalPage?: BrowserTab["internalPage"]
+  showInUrlBar?: boolean
+  url?: string
+  title?: string
+  faviconUrl?: string | null
+  loading?: boolean
+  lifecycleState?: BrowserTab["lifecycleState"]
+  canGoBack?: boolean
+  canGoForward?: boolean
+}
+
+export type PhotonBrowserUpdate =
+  | { type: "tab-added"; tab: BrowserTab }
+  | { type: "tab-updated"; tabId: TabId; changes: BrowserTabChanges }
+  | { type: "tab-removed"; tabId: TabId }
+  | { type: "tabs-reordered"; tabIds: TabId[] }
+  | { type: "active-tab-changed"; activeTabId: TabId }
+  | { type: "window-maximized-changed"; isMaximized: boolean }
+
+export interface PhotonBrowserUpdateEnvelope {
+  revision: number
+  update: PhotonBrowserUpdate
 }
 
 export interface PhotonNavigationAPI {
   back: () => Promise<void>
   forward: () => Promise<void>
   reload: () => Promise<void>
+  stop: () => Promise<void>
   navigate: (url: string) => Promise<void>
 }
 
@@ -62,6 +89,10 @@ export interface PhotonWindowAPI {
   close: () => Promise<void>
 }
 
+export interface PhotonMemorySaverAPI {
+  setSettings: (settings: MemorySaverSettings) => Promise<void>
+}
+
 export interface PhotonDownloadsAPI {
   getSnapshot: () => Promise<BrowserDownload[]>
   cancel: (id: DownloadId) => Promise<void>
@@ -72,12 +103,58 @@ export interface PhotonDownloadsAPI {
   onChanged: (listener: (downloads: BrowserDownload[]) => void) => () => void
 }
 
+export interface PhotonPerformanceMetrics {
+  cpuPercent: number
+  ramTotalBytes: number
+  ramHeapUsedBytes: number
+  rendererCount: number
+  webContentsCount: number
+  totalWorkingSetBytes: number
+  totalPrivateBytes: number | null
+  processes: PhotonProcessMetric[]
+  activeTabId: TabId | null
+  tabs: PhotonTabDiagnostics[]
+  timestamp: number
+}
+
+export interface PhotonProcessMetric {
+  type: string
+  name: string | null
+  pid: number
+  cpuPercent: number
+  workingSetBytes: number
+  privateBytes: number | null
+  webContents: PhotonWebContentsMetric[]
+}
+
+export interface PhotonWebContentsMetric {
+  id: number
+  type: string
+  url: string
+  title: string
+}
+
+export interface PhotonTabDiagnostics {
+  tabId: TabId
+  pageRendererInitialized: boolean
+  pageWebContentsId: number | null
+  pageProcessId: number | null
+}
+
+export interface PhotonPerformanceAPI {
+  getMetrics: () => Promise<PhotonPerformanceMetrics>
+}
+
 export interface PhotonAPI {
   getSnapshot: () => Promise<PhotonSnapshot>
   navigation: PhotonNavigationAPI
   tabs: PhotonTabsAPI
   window: PhotonWindowAPI
+  memorySaver: PhotonMemorySaverAPI
   downloads: PhotonDownloadsAPI
-  onSnapshot: (listener: (snapshot: PhotonSnapshot) => void) => () => void
+  performance: PhotonPerformanceAPI
+  overlay: PhotonOverlayAPI
+  onUpdates: (listener: (updates: PhotonBrowserUpdateEnvelope[]) => void) => () => void
   onFocusOmnibox: (listener: () => void) => () => void
 }
+import type { PhotonOverlayAPI } from "@/shared/overlay"

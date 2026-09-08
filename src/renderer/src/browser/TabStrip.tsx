@@ -1,12 +1,10 @@
-import { memo, useEffect, useRef, useState } from "react"
-import { Button } from "@heroui/react"
-import { Asterisk, Globe2, LoaderCircle, Plus, X } from "lucide-react"
-import { AnimatePresence, LayoutGroup, Reorder, motion, useReducedMotion } from "motion/react"
+import { memo, useEffect, useRef, useState, type DragEvent } from "react"
+import { Asterisk, BedDouble, Globe2, LoaderCircle, Plus, X } from "lucide-react"
 import type { BrowserTab as BrowserTabState, TabId } from "@/preload/photon-api"
+import { IconButton } from "../ui/IconButton"
 import { useBrowserStore } from "../stores/browser-store"
 
 interface BrowserTabProps {
-  reducedMotion: boolean
   tab: BrowserTabState
 }
 
@@ -14,12 +12,12 @@ function areBrowserTabPropsEqual(previous: BrowserTabProps, next: BrowserTabProp
   const previousTab = previous.tab
   const nextTab = next.tab
   return (
-    previous.reducedMotion === next.reducedMotion &&
     previousTab.id === nextTab.id &&
     previousTab.url === nextTab.url &&
     previousTab.title === nextTab.title &&
     previousTab.faviconUrl === nextTab.faviconUrl &&
     previousTab.loading === nextTab.loading &&
+    previousTab.lifecycleState === nextTab.lifecycleState &&
     previousTab.canGoBack === nextTab.canGoBack &&
     previousTab.canGoForward === nextTab.canGoForward
   )
@@ -29,32 +27,13 @@ function hasSameTabOrder(first: readonly TabId[], second: readonly TabId[]): boo
   return first.length === second.length && first.every((tabId, index) => tabId === second[index])
 }
 
-const tabMotionTransition = {
-  layout: {
-    duration: 0.15,
-    ease: [0.22, 1, 0.36, 1],
-  },
-  opacity: {
-    duration: 0.08,
-    ease: "easeOut",
-  },
-  scale: {
-    duration: 0.15,
-    ease: [0.22, 1, 0.36, 1],
-  },
-} as const
-
-const BrowserTab = memo(function BrowserTab({
-  reducedMotion,
-  tab,
-}: BrowserTabProps): React.JSX.Element {
+const BrowserTab = memo(function BrowserTab({ tab }: BrowserTabProps): React.JSX.Element {
   const isActive = useBrowserStore((state) => state.activeTabId === tab.id)
-  const transition = reducedMotion ? { duration: 0 } : tabMotionTransition
 
   return (
     <div
       aria-selected={isActive}
-      className={isActive ? "photon-tab photon-tab-active" : "photon-tab"}
+      className={isActive ? "photon-tab photon-tab-active" : "photon-tab photon-tab-inactive"}
       role="tab"
       tabIndex={0}
       onClick={() => void window.photon.tabs.select(tab.id)}
@@ -65,17 +44,12 @@ const BrowserTab = memo(function BrowserTab({
         }
       }}
     >
-      {isActive && (
-        <motion.span
-          aria-hidden="true"
-          className="photon-tab-active-background"
-          layoutId="photon-active-tab"
-          transition={transition}
-        />
-      )}
+      <span aria-hidden="true" className="photon-tab-active-background" />
       <span className="photon-tab-content">
         <span className="photon-tab-icon">
-          {tab.loading ? (
+          {tab.lifecycleState === "frozen" ? (
+            <BedDouble aria-label="Suspended tab" size={14} />
+          ) : tab.loading ? (
             <LoaderCircle aria-label="Loading" className="animate-spin" size={14} />
           ) : tab.kind === "internal" ? (
             <Asterisk aria-label="Photon" size={14} />
@@ -99,18 +73,20 @@ const BrowserTab = memo(function BrowserTab({
           )}
         </span>
         <span className="photon-tab-title">{tab.title || "New Tab"}</span>
-        <button
-          aria-label="Close tab"
+        <IconButton
+          ariaLabel="Close tab"
           className="photon-tab-close"
-          type="button"
+          size="sm"
+          variant="ghost"
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation()
+          onKeyDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onPress={() => {
             void window.photon.tabs.close(tab.id)
           }}
         >
-          <X size={14} />
-        </button>
+          <X aria-hidden="true" size={14} />
+        </IconButton>
       </span>
     </div>
   )
@@ -118,12 +94,14 @@ const BrowserTab = memo(function BrowserTab({
 
 export function TabStrip(): React.JSX.Element {
   const tabs = useBrowserStore((state) => state.tabs)
-  const reducedMotion = useReducedMotion() ?? false
-  const transition = reducedMotion ? { duration: 0 } : tabMotionTransition
   const [orderedTabIds, setOrderedTabIds] = useState<TabId[]>(() => tabs.map((tab) => tab.id))
   const orderedTabIdsRef = useRef(orderedTabIds)
   const pendingOrderRef = useRef<TabId[] | null>(null)
   const tabsRef = useRef(tabs)
+  const draggedTabIdRef = useRef<TabId | null>(null)
+  const dropCompletedRef = useRef(false)
+  const [draggedTabId, setDraggedTabId] = useState<TabId | null>(null)
+  const [dropTargetTabId, setDropTargetTabId] = useState<TabId | null>(null)
 
   useEffect(() => {
     tabsRef.current = tabs
@@ -175,46 +153,94 @@ export function TabStrip(): React.JSX.Element {
     })
   }
 
+  const resetLocalOrder = (): void => {
+    pendingOrderRef.current = null
+    const snapshotOrder = tabsRef.current.map((tab) => tab.id)
+    orderedTabIdsRef.current = snapshotOrder
+    setOrderedTabIds(snapshotOrder)
+  }
+
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, tabId: TabId): void => {
+    draggedTabIdRef.current = tabId
+    setDraggedTabId(tabId)
+    dropCompletedRef.current = false
+    setDropTargetTabId(null)
+    event.dataTransfer.effectAllowed = "move"
+    event.dataTransfer.setData("text/plain", tabId)
+  }
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>, targetTabId: TabId): void => {
+    const draggedTabId = draggedTabIdRef.current
+    if (!draggedTabId || draggedTabId === targetTabId) return
+
+    event.preventDefault()
+    event.dataTransfer.dropEffect = "move"
+    setDropTargetTabId((currentTarget) =>
+      currentTarget === targetTabId ? currentTarget : targetTabId,
+    )
+  }
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>, targetTabId: TabId): void => {
+    event.preventDefault()
+    dropCompletedRef.current = true
+
+    const draggedTabId = draggedTabIdRef.current
+    if (!draggedTabId || draggedTabId === targetTabId) return
+
+    const sourceIndex = orderedTabIdsRef.current.indexOf(draggedTabId)
+    const targetIndex = orderedTabIdsRef.current.indexOf(targetTabId)
+    if (sourceIndex < 0 || targetIndex < 0) return
+
+    const targetBounds = event.currentTarget.getBoundingClientRect()
+    const dropBeforeTarget = event.clientX < targetBounds.left + targetBounds.width / 2
+    const nextOrder = orderedTabIdsRef.current.filter((tabId) => tabId !== draggedTabId)
+    const nextTargetIndex = nextOrder.indexOf(targetTabId)
+    if (nextTargetIndex < 0) return
+
+    const insertAt = dropBeforeTarget ? nextTargetIndex : nextTargetIndex + 1
+    nextOrder.splice(insertAt, 0, draggedTabId)
+    handleReorder(nextOrder)
+    commitReorder()
+  }
+
+  const handleDragEnd = (): void => {
+    draggedTabIdRef.current = null
+    setDraggedTabId(null)
+    setDropTargetTabId(null)
+    if (!dropCompletedRef.current) resetLocalOrder()
+    dropCompletedRef.current = false
+  }
+
   return (
     <div aria-label="Browser tabs" className="photon-tab-strip" role="tablist">
-      <Reorder.Group
-        as="div"
-        axis="x"
-        className="photon-tab-reorder-group"
-        values={orderedTabs.map((tab) => tab.id)}
-        onReorder={handleReorder}
-      >
-        <LayoutGroup id="photon-tabs">
-          <AnimatePresence initial={false} mode="popLayout">
-            {orderedTabs.map((tab) => (
-              <Reorder.Item
-                key={tab.id}
-                as="div"
-                className="photon-tab-layout"
-                data-photon-tab={tab.id}
-                layout
-                transition={transition}
-                value={tab.id}
-                whileDrag={{ scale: 1.02, zIndex: 2 }}
-                onDragEnd={commitReorder}
-              >
-                <BrowserTab reducedMotion={reducedMotion} tab={tab} />
-              </Reorder.Item>
-            ))}
-          </AnimatePresence>
-        </LayoutGroup>
-      </Reorder.Group>
+      <div className="photon-tab-reorder-group">
+        {orderedTabs.map((tab) => (
+          <div
+            key={tab.id}
+            className="photon-tab-layout"
+            data-drag-over={dropTargetTabId === tab.id ? "true" : undefined}
+            data-dragging={draggedTabId === tab.id ? "true" : undefined}
+            data-photon-tab={tab.id}
+            draggable
+            onDragEnd={handleDragEnd}
+            onDragOver={(event) => handleDragOver(event, tab.id)}
+            onDragStart={(event) => handleDragStart(event, tab.id)}
+            onDrop={(event) => handleDrop(event, tab.id)}
+          >
+            <BrowserTab tab={tab} />
+          </div>
+        ))}
+      </div>
       <div className="photon-new-tab-layout">
-        <Button
-          isIconOnly
-          aria-label="New tab"
+        <IconButton
+          ariaLabel="New tab"
           className="photon-new-tab"
           size="sm"
           variant="ghost"
           onPress={() => void window.photon.tabs.create()}
         >
-          <Plus size={17} />
-        </Button>
+          <Plus aria-hidden="true" size={17} />
+        </IconButton>
       </div>
     </div>
   )
