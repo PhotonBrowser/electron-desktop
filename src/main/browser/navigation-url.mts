@@ -1,4 +1,5 @@
 import { isIP } from "node:net"
+import { BROWSER_DEFAULTS } from "../../shared/browser-constants.ts"
 import type { InternalPageRegistry } from "./internal-pages.mts"
 
 const SUPPORTED_PROTOCOLS = new Set(["http:", "https:"])
@@ -41,7 +42,7 @@ function createDirectUrl(value: string): string | undefined {
 }
 
 function createSearchUrl(query: string): string {
-  const searchUrl = new URL("https://www.google.com/search")
+  const searchUrl = new URL(BROWSER_DEFAULTS.searchEngineUrl)
   searchUrl.search = new URLSearchParams({ q: query }).toString()
   return searchUrl.toString()
 }

@@ -2,26 +2,22 @@ import type {
   BrowserNavigationCommand,
   BrowserTab,
   BrowserTabChanges,
-  MemorySaverLevel,
   MemorySaverSettings,
   PhotonBrowserUpdate,
   TabId,
-} from "@/preload/photon-api"
-import { resolveNavigationUrl } from "./navigation-url.mts"
+} from "@/shared/photon-api"
 import { type InternalPageRegistry } from "./internal-pages.mts"
-import { areBrowserTabsEqual, createBrowserTab, getBrowserTabChanges } from "./tab-state.ts"
+import { TabLifecycle, type TabRecord } from "./tab-lifecycle.ts"
+import {
+  applyWebviewChanges,
+  areBrowserTabsEqual,
+  createBrowserTab,
+  createNavigatedTab,
+  getBrowserTabChanges,
+} from "./tab-state.ts"
 
 type CloseLastTabAction = "close-window" | "new-tab"
 const CLOSE_LAST_TAB_ACTION: CloseLastTabAction = "close-window"
-const MEMORY_SAVER_DELAYS: Record<MemorySaverLevel, number> = {
-  moderate: 5 * 60 * 1000,
-  balanced: 60 * 1000,
-  maximum: 15 * 1000,
-}
-const DEFAULT_MEMORY_SAVER_SETTINGS: MemorySaverSettings = {
-  enabled: true,
-  level: "balanced",
-}
 
 export interface TabManagerSnapshot {
   tabs: BrowserTab[]
@@ -32,7 +28,7 @@ export interface TabManagerDiagnostics {
   activeTabId: TabId | null
   tabs: Array<{
     tabId: TabId
-    webviewAttached: boolean
+    webviewMounted: boolean
   }>
 }
 
@@ -49,11 +45,6 @@ export interface TabManagerOptions {
   pages: InternalPageRegistry
 }
 
-interface TabRecord {
-  state: BrowserTab
-  inactiveTimer?: ReturnType<typeof setTimeout>
-}
-
 export class TabManager {
   private readonly onChange: StateListener
   private readonly onFocusOmnibox: () => void
@@ -62,10 +53,10 @@ export class TabManager {
   private readonly onCloseWindow: () => void
   private readonly pages: InternalPageRegistry
   private readonly tabs = new Map<TabId, TabRecord>()
+  private readonly lifecycle: TabLifecycle
   private readonly recentlyClosedUrls: string[] = []
   private activeTabId: TabId | null = null
   private nextTabNumber = 1
-  private memorySaverSettings: MemorySaverSettings = DEFAULT_MEMORY_SAVER_SETTINGS
 
   constructor(options: TabManagerOptions) {
     this.onChange = options.onChange
@@ -74,6 +65,10 @@ export class TabManager {
     this.onNavigationCommand = options.onNavigationCommand
     this.onCloseWindow = options.onCloseWindow
     this.pages = options.pages
+    this.lifecycle = new TabLifecycle(
+      (record, nextState) => this.updateTab(record, nextState),
+      (record) => this.activeTabId === record.state.id && record.state.kind === "web",
+    )
     this.createTab(this.pages.newTabUrl, false, false)
   }
 
@@ -92,7 +87,7 @@ export class TabManager {
       // tab identity, but it deliberately does not retain guest references.
       tabs: [...this.tabs.values()].map((record) => ({
         tabId: record.state.id,
-        webviewAttached: record.state.kind === "web" && record.state.lifecycleState === "active",
+        webviewMounted: record.state.kind === "web" && record.state.lifecycleState === "active",
       })),
     }
   }
@@ -210,20 +205,7 @@ export class TabManager {
   }
 
   setMemorySaverSettings(settings: MemorySaverSettings): void {
-    this.memorySaverSettings = settings
-    for (const record of this.tabs.values()) {
-      if (record.state.kind !== "web") continue
-      if (this.isPageActive(record)) {
-        this.clearInactiveTimer(record)
-        continue
-      }
-      if (!settings.enabled) {
-        this.clearInactiveTimer(record)
-        this.activatePage(record)
-        continue
-      }
-      if (record.state.lifecycleState !== "frozen") this.scheduleInactiveTab(record)
-    }
+    this.lifecycle.setSettings(settings, this.tabs.values())
   }
 
   async navigateActive(input: string): Promise<void> {
@@ -250,23 +232,7 @@ export class TabManager {
     const record = this.tabs.get(tabId)
     if (!record || record.state.kind !== "web") return
 
-    const nextState: BrowserTab = {
-      ...record.state,
-      kind: "web",
-      internalPage: null,
-      showInUrlBar: true,
-    }
-    if (changes.url !== undefined) nextState.url = changes.url
-    if (changes.title !== undefined) nextState.title = changes.title
-    if (changes.loading !== undefined) nextState.loading = changes.loading
-    if (changes.canGoBack !== undefined) nextState.canGoBack = changes.canGoBack
-    if (changes.canGoForward !== undefined) nextState.canGoForward = changes.canGoForward
-    if (changes.crashed !== undefined) nextState.crashed = changes.crashed
-    if (changes.error !== undefined) nextState.error = changes.error
-    const faviconUrl = changes.faviconUrl
-    if (faviconUrl === null) delete nextState.faviconUrl
-    else if (faviconUrl !== undefined) nextState.faviconUrl = faviconUrl
-    this.updateTab(record, nextState)
+    this.updateTab(record, applyWebviewChanges(record.state, changes))
   }
 
   selectRelativeTab(offset: -1 | 1): void {
@@ -275,7 +241,8 @@ export class TabManager {
 
     const currentIndex = ids.indexOf(this.activeTabId)
     const nextIndex = (currentIndex + offset + ids.length) % ids.length
-    void this.selectTab(ids[nextIndex] as TabId)
+    const nextTabId = ids[nextIndex]
+    if (nextTabId) void this.selectTab(nextTabId)
   }
 
   private createRecord(id: TabId, url: string): TabRecord {
@@ -288,40 +255,15 @@ export class TabManager {
     const record = this.tabs.get(id)
     if (!record) return
 
-    const url = resolveNavigationUrl(input, this.pages)
-    const internalPage = this.pages.resolve(url)
-    if (internalPage) {
-      this.clearInactiveTimer(record)
-      this.updateTab(record, {
-        ...record.state,
-        kind: "internal",
-        internalPage: internalPage.id,
-        showInUrlBar: internalPage.showInUrlBar,
-        url,
-        title: internalPage.title,
-        loading: false,
-        canGoBack: false,
-        canGoForward: false,
-        crashed: false,
-        error: null,
-        lifecycleState: "active",
-      })
+    const nextState = createNavigatedTab(record.state, input, this.pages)
+    if (nextState.kind === "internal") {
+      this.lifecycle.clear(record)
+      this.updateTab(record, nextState)
       return
     }
 
     this.activatePage(record)
-    this.updateTab(record, {
-      ...record.state,
-      kind: "web",
-      internalPage: null,
-      showInUrlBar: true,
-      url,
-      title: "Loading…",
-      loading: true,
-      crashed: false,
-      error: null,
-      lifecycleState: "active",
-    })
+    this.updateTab(record, nextState)
   }
 
   private sendNavigationCommand(command: Exclude<BrowserNavigationCommand, "focus">): void {
@@ -345,7 +287,7 @@ export class TabManager {
 
   private hideTab(id: TabId): void {
     const record = this.tabs.get(id)
-    if (record?.state.kind === "web") this.scheduleInactiveTab(record)
+    if (record?.state.kind === "web") this.lifecycle.schedule(record)
   }
 
   private isTabActivated(id: TabId): boolean {
@@ -353,36 +295,11 @@ export class TabManager {
     return record?.state.kind === "internal" || record?.state.lifecycleState === "active"
   }
 
-  private isPageActive(record: TabRecord): boolean {
-    return this.activeTabId === record.state.id && record.state.kind === "web"
-  }
-
   private activatePage(record: TabRecord): void {
-    this.clearInactiveTimer(record)
-    if (record.state.lifecycleState === "frozen") {
-      this.updateTab(record, { ...record.state, lifecycleState: "active" })
-    }
+    this.lifecycle.activate(record)
     if (this.activeTabId !== record.state.id) return
     if (record.state.kind === "web") this.onFocusPage(record.state.id)
     else this.onFocusOmnibox()
-  }
-
-  private scheduleInactiveTab(record: TabRecord): void {
-    this.clearInactiveTimer(record)
-    if (!this.memorySaverSettings.enabled || record.state.lifecycleState === "frozen") return
-
-    record.inactiveTimer = setTimeout(() => {
-      delete record.inactiveTimer
-      if (!this.isPageActive(record)) {
-        this.updateTab(record, { ...record.state, lifecycleState: "frozen" })
-      }
-    }, MEMORY_SAVER_DELAYS[this.memorySaverSettings.level])
-  }
-
-  private clearInactiveTimer(record: TabRecord): void {
-    if (record.inactiveTimer === undefined) return
-    clearTimeout(record.inactiveTimer)
-    delete record.inactiveTimer
   }
 
   private focusSelectedTab(): void {
@@ -395,7 +312,7 @@ export class TabManager {
   private destroyRecord(id: TabId): void {
     const record = this.tabs.get(id)
     if (!record) return
-    this.clearInactiveTimer(record)
+    this.lifecycle.clear(record)
     this.tabs.delete(id)
   }
 }

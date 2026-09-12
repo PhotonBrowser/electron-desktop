@@ -1,4 +1,4 @@
 export const PHOTON_THEME_COLORS = {
-  lightWindowBackground: "#f3f4f4",
-  darkWindowBackground: "#202223",
+  lightWindowBackground: "#f6f7f7",
+  darkWindowBackground: "#252728",
 } as const

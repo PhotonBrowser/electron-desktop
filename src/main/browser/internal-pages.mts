@@ -1,9 +1,11 @@
+import { BROWSER_DEFAULTS } from "../../shared/browser-constants.ts"
+import type { InternalPageId } from "@/shared/photon-api"
+
 export const INTERNAL_PAGE_DEFINITIONS = {
-  "new-tab": { title: "New Tab", showInUrlBar: false },
+  "new-tab": { title: BROWSER_DEFAULTS.newTabTitle, showInUrlBar: false },
   settings: { title: "Settings", showInUrlBar: true },
 } as const
 
-export type InternalPageId = keyof typeof INTERNAL_PAGE_DEFINITIONS
 export type PhotonInternalUrl = `${string}://${InternalPageId}`
 export type TabKind = "internal" | "web"
 

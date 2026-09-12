@@ -1,7 +1,8 @@
 import { app, session, shell, type DownloadItem, type Event, type WebContents } from "electron"
 import { existsSync } from "node:fs"
 import { join } from "node:path"
-import type { BrowserDownload, DownloadId } from "@/preload/photon-api"
+import { IPC_CHANNELS } from "@/shared/ipc-channels"
+import type { BrowserDownload, DownloadId } from "@/shared/photon-api"
 import { nextAvailableFilename } from "./download-filename.mts"
 
 type ChangeListener = () => void
@@ -192,7 +193,7 @@ export class DownloadManager {
     if (this.disposed) return
     for (const listener of this.listeners) listener()
     if (!this.chromeWebContents.isDestroyed()) {
-      this.chromeWebContents.send("photon:downloads-changed", this.getSnapshot())
+      this.chromeWebContents.send(IPC_CHANNELS.downloads.changed, this.getSnapshot())
     }
   }
 }

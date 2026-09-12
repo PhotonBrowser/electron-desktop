@@ -1,16 +1,19 @@
-import type { BrowserTab, BrowserTabChanges, TabId } from "@/preload/photon-api"
+import { BROWSER_DEFAULTS } from "../../shared/browser-constants.ts"
+import type { BrowserTab, BrowserTabChanges, TabId } from "@/shared/photon-api"
 import { type InternalPageRegistry, resolveTabKind } from "./internal-pages.mts"
+import { resolveNavigationUrl } from "./navigation-url.mts"
 
 export function createBrowserTab(id: TabId, url: string, pages: InternalPageRegistry): BrowserTab {
+  const kind = resolveTabKind(url, pages)
   const internalPage = pages.resolve(url)
   return {
     id,
-    kind: resolveTabKind(url, pages),
+    kind,
     internalPage: internalPage?.id ?? null,
     showInUrlBar: internalPage?.showInUrlBar ?? true,
     url,
-    title: internalPage?.title ?? "Loading…",
-    loading: resolveTabKind(url, pages) === "web",
+    title: internalPage?.title ?? BROWSER_DEFAULTS.loadingTitle,
+    loading: kind === "web",
     lifecycleState: "active",
     canGoBack: false,
     canGoForward: false,
@@ -34,6 +37,63 @@ export function getBrowserTabChanges(first: BrowserTab, second: BrowserTab): Bro
   if (first.crashed !== second.crashed) changes.crashed = second.crashed
   if (first.error !== second.error) changes.error = second.error
   return changes
+}
+
+export function createNavigatedTab(
+  current: BrowserTab,
+  input: string,
+  pages: InternalPageRegistry,
+): BrowserTab {
+  const url = resolveNavigationUrl(input, pages)
+  const internalPage = pages.resolve(url)
+  if (internalPage) {
+    return {
+      ...current,
+      kind: "internal",
+      internalPage: internalPage.id,
+      showInUrlBar: internalPage.showInUrlBar,
+      url,
+      title: internalPage.title,
+      loading: false,
+      canGoBack: false,
+      canGoForward: false,
+      crashed: false,
+      error: null,
+      lifecycleState: "active",
+    }
+  }
+
+  return {
+    ...current,
+    kind: "web",
+    internalPage: null,
+    showInUrlBar: true,
+    url,
+    title: BROWSER_DEFAULTS.loadingTitle,
+    loading: true,
+    crashed: false,
+    error: null,
+    lifecycleState: "active",
+  }
+}
+
+export function applyWebviewChanges(current: BrowserTab, changes: BrowserTabChanges): BrowserTab {
+  const nextState: BrowserTab = {
+    ...current,
+    kind: "web",
+    internalPage: null,
+    showInUrlBar: true,
+  }
+  if (changes.url !== undefined) nextState.url = changes.url
+  if (changes.title !== undefined) nextState.title = changes.title
+  if (changes.loading !== undefined) nextState.loading = changes.loading
+  if (changes.canGoBack !== undefined) nextState.canGoBack = changes.canGoBack
+  if (changes.canGoForward !== undefined) nextState.canGoForward = changes.canGoForward
+  if (changes.crashed !== undefined) nextState.crashed = changes.crashed
+  if (changes.error !== undefined) nextState.error = changes.error
+  if (changes.faviconUrl === null) delete nextState.faviconUrl
+  else if (changes.faviconUrl !== undefined) nextState.faviconUrl = changes.faviconUrl
+  return nextState
 }
 
 export function areBrowserTabsEqual(first: BrowserTab, second: BrowserTab): boolean {
