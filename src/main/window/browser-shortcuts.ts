@@ -89,6 +89,7 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
 export function registerBrowserShortcuts(context: BrowserShortcutsContext): () => void {
   const { tabManager, focusOmnibox } = context
   const attachedWebContents = new Set<WebContents>()
+  const destroyedHandlers = new Map<WebContents, () => void>()
   const handleBeforeInputEvent = (event: Event, input: Input): void => {
     const shortcut = resolveBrowserShortcut(input)
     if (!shortcut) return
@@ -130,7 +131,14 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
   const attach = (webContents: WebContents): void => {
     if (webContents.isDestroyed() || attachedWebContents.has(webContents)) return
     webContents.on("before-input-event", handleBeforeInputEvent)
+    const handleDestroyed = (): void => {
+      webContents.off("before-input-event", handleBeforeInputEvent)
+      attachedWebContents.delete(webContents)
+      destroyedHandlers.delete(webContents)
+    }
+    webContents.once("destroyed", handleDestroyed)
     attachedWebContents.add(webContents)
+    destroyedHandlers.set(webContents, handleDestroyed)
   }
 
   const handleGuestAttached = (_event: Event, guest: WebContents): void => attach(guest)
@@ -142,7 +150,10 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
     chromeWebContents.off(WEBVIEW_EVENTS.didAttach, handleGuestAttached)
     for (const webContents of attachedWebContents) {
       webContents.off("before-input-event", handleBeforeInputEvent)
+      const handleDestroyed = destroyedHandlers.get(webContents)
+      if (handleDestroyed) webContents.off("destroyed", handleDestroyed)
     }
     attachedWebContents.clear()
+    destroyedHandlers.clear()
   }
 }
