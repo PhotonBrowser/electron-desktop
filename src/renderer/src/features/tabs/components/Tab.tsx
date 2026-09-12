@@ -1,8 +1,9 @@
 import { memo, useState } from "react"
-import { Asterisk, BedDouble, Globe2, LoaderCircle, X } from "lucide-react"
+import { BedDouble, Globe2, LoaderCircle, X } from "lucide-react"
 import { BROWSER_DEFAULTS } from "@/shared/browser-constants"
 import type { BrowserTab } from "@/shared/photon-api"
 import { IconButton } from "@/renderer/src/ui/IconButton"
+import { PhotonLogoMonotone } from "@/renderer/src/ui/PhotonLogoMonotone"
 import { useBrowserStore } from "@/renderer/src/stores/browser-store"
 import { areTabPropsEqual } from "../tab-utils"
 
@@ -36,7 +37,7 @@ export const Tab = memo(
             ) : tab.loading ? (
               <LoaderCircle aria-label="Loading" className="animate-spin" size={12} />
             ) : tab.kind === "internal" ? (
-              <Asterisk aria-label="Photon" size={12} />
+              <PhotonLogoMonotone size={12} />
             ) : (
               <WebTabIcon key={`${tab.url}:${tab.faviconUrl ?? ""}`} faviconUrl={tab.faviconUrl} />
             )}
