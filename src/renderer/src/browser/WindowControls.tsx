@@ -15,7 +15,7 @@ export function WindowControls(): React.JSX.Element | null {
         variant="ghost"
         onPress={() => void window.photon.window.minimize()}
       >
-        <Minus aria-hidden="true" size={13} />
+        <Minus aria-hidden="true" size={11} />
       </IconButton>
       <IconButton
         ariaLabel={isMaximized ? "Restore window" : "Maximize window"}
@@ -25,9 +25,9 @@ export function WindowControls(): React.JSX.Element | null {
         onPress={() => void window.photon.window.toggleMaximize()}
       >
         {isMaximized ? (
-          <Copy aria-hidden="true" size={11} />
+          <Copy aria-hidden="true" size={10} />
         ) : (
-          <Square aria-hidden="true" size={11} />
+          <Square aria-hidden="true" size={10} />
         )}
       </IconButton>
       <IconButton
@@ -37,7 +37,7 @@ export function WindowControls(): React.JSX.Element | null {
         variant="ghost"
         onPress={() => void window.photon.window.close()}
       >
-        <X aria-hidden="true" size={13} />
+        <X aria-hidden="true" size={11} />
       </IconButton>
     </div>
   )

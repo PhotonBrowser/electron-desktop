@@ -1,6 +1,7 @@
 import { ListBox, Radio, RadioGroup, Select, Switch } from "@heroui/react"
-import type { MemorySaverLevel } from "@/preload/photon-api"
-import { useBrowserStore, type ThemeMode } from "@/renderer/src/stores/browser-store"
+import type { MemorySaverLevel } from "@/shared/photon-api"
+import { isMemorySaverLevel, isThemeMode } from "@/shared/browser-settings"
+import { useBrowserStore } from "@/renderer/src/stores/browser-store"
 
 const memorySaverOptions: ReadonlyArray<{
   value: MemorySaverLevel
@@ -23,14 +24,6 @@ const memorySaverOptions: ReadonlyArray<{
     description: "Tabs become inactive after a shorter period of time.",
   },
 ]
-
-function isThemeMode(value: string): value is ThemeMode {
-  return value === "system" || value === "light" || value === "dark"
-}
-
-function isMemorySaverLevel(value: string): value is MemorySaverLevel {
-  return value === "moderate" || value === "balanced" || value === "maximum"
-}
 
 export function SettingsPage(): React.JSX.Element {
   const themeMode = useBrowserStore((state) => state.themeMode)

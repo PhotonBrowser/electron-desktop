@@ -1,4 +1,4 @@
-import { TabStrip } from "./TabStrip"
+import { TabStrip } from "../features/tabs/components/TabStrip"
 import { WindowControls } from "./WindowControls"
 
 export function Titlebar(): React.JSX.Element {

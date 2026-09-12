@@ -16,6 +16,8 @@ export interface DropDownItem {
 
 export interface DropDownProps {
   trigger: ReactNode
+  triggerLabel: string
+  triggerClassName?: string
   items: readonly DropDownItem[]
   isOpen?: boolean
   onOpenChange?: (isOpen: boolean) => void
@@ -24,6 +26,8 @@ export interface DropDownProps {
 
 export function DropDown({
   trigger,
+  triggerLabel,
+  triggerClassName,
   items,
   isOpen: controlledOpen,
   onOpenChange,
@@ -38,7 +42,13 @@ export function DropDown({
 
   return (
     <HeroDropdown isOpen={isOpen} onOpenChange={handleOpenChange}>
-      <HeroDropdown.Trigger>{trigger}</HeroDropdown.Trigger>
+      <HeroDropdown.Trigger
+        aria-label={triggerLabel}
+        className={`button button--icon-only button--sm button--ghost photon-icon-button ${triggerClassName ?? ""}`.trim()}
+        type="button"
+      >
+        {trigger}
+      </HeroDropdown.Trigger>
       <HeroDropdown.Popover
         placement={placement}
         className="z-50 min-w-44 rounded-lg border border-line bg-panel p-1 text-fg shadow-elevated opacity-100 transition-[opacity,transform] duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[entering]:scale-95 data-[entering]:opacity-0 data-[exiting]:scale-95 data-[exiting]:opacity-0"
@@ -54,7 +64,7 @@ export function DropDown({
                 if (controlledOpen === undefined) setUncontrolledOpen(false)
               }}
               className={[
-                "flex min-h-8 items-center gap-2 rounded-md px-2 text-sm outline-none",
+                "flex min-h-8 items-center gap-2 rounded px-2 text-sm outline-none",
                 "data-[focused]:bg-default data-[focused]:text-default-foreground",
                 item.separator ? "mt-1 border-t border-line pt-1" : "",
               ].join(" ")}

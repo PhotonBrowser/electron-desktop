@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
-import type { PhotonPerformanceMetrics } from "@/preload/photon-api"
-
-const METRICS_INTERVAL_MS = 2_000
+import { PERFORMANCE_METRICS_INTERVAL_MS } from "@/shared/browser-constants"
+import type { PhotonPerformanceMetrics } from "@/shared/photon-api"
 
 function formatMB(bytes: number | null): string {
   if (bytes === null) return "n/a"
@@ -32,7 +31,7 @@ export function PerformanceOverlay(): React.JSX.Element {
     }
 
     void sample()
-    const interval = setInterval(() => void sample(), METRICS_INTERVAL_MS)
+    const interval = setInterval(() => void sample(), PERFORMANCE_METRICS_INTERVAL_MS)
     return () => {
       disposed = true
       clearInterval(interval)
@@ -65,7 +64,7 @@ export function PerformanceOverlay(): React.JSX.Element {
       {metrics?.tabs.map((tab) => (
         <div key={tab.tabId}>
           {tab.tabId}{" "}
-          <span className="perf-value">{tab.webviewAttached ? "webview" : "chrome-only"}</span>
+          <span className="perf-value">{tab.webviewMounted ? "webview" : "chrome-only"}</span>
         </div>
       ))}
       <div className="perf-note">Event-driven UI · no layout polling</div>
@@ -76,5 +75,5 @@ export function PerformanceOverlay(): React.JSX.Element {
 function getActivePageLabel(metrics: PhotonPerformanceMetrics | undefined): string {
   if (!metrics) return "…"
   const activeTab = metrics.tabs.find((tab) => tab.tabId === metrics.activeTabId)
-  return activeTab?.webviewAttached ? "webview" : "none"
+  return activeTab?.webviewMounted ? "webview" : "none"
 }

@@ -15,6 +15,8 @@ body,
   width: 100%;
   height: 100%;
   margin: 0;
+  overflow: hidden;
+  background: transparent;
 }
 
 *,
@@ -51,10 +53,13 @@ body,
   --photon-chrome-height: calc(var(--photon-titlebar-height) + var(--photon-toolbar-height));
   --photon-chrome-padding: var(--photon-space-2);
   --photon-chrome-gap: var(--photon-space-1);
+  --photon-window-inset: var(--photon-space-1);
   --photon-radius-control: 8px;
   --photon-radius-field: 10px;
   --photon-radius-panel: 16px;
-  --photon-color-canvas: #f3f4f4;
+  --photon-radius-window: 12px;
+  --photon-radius-inner-window: calc(var(--photon-radius-window) - var(--photon-window-inset));
+  --photon-color-canvas: #f6f7f7;
   --photon-color-surface: #e5e7e8;
   --photon-color-surface-hover: #d9dcdd;
   --photon-color-border: #d7d9da;
@@ -92,7 +97,7 @@ body,
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --photon-color-canvas: #202223;
+    --photon-color-canvas: #252728;
     --photon-color-surface: #363839;
     --photon-color-surface-hover: #424546;
     --photon-color-border: #383b3c;
@@ -108,7 +113,7 @@ body,
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --photon-color-canvas: #f3f4f4;
+  --photon-color-canvas: #f6f7f7;
   --photon-color-surface: #e5e7e8;
   --photon-color-surface-hover: #d9dcdd;
   --photon-color-border: #d7d9da;
@@ -121,7 +126,7 @@ body,
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --photon-color-canvas: #202223;
+  --photon-color-canvas: #252728;
   --photon-color-surface: #363839;
   --photon-color-surface-hover: #424546;
   --photon-color-border: #383b3c;
@@ -140,6 +145,16 @@ body {
   color: var(--photon-color-text-primary);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.photon-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--photon-radius-window);
+  background: var(--photon-color-canvas);
+  clip-path: inset(0 round var(--photon-radius-window));
 }
 
 button,
@@ -327,9 +342,9 @@ select {
 
 .photon-tab-close {
   display: grid;
-  flex: 0 0 24px;
-  width: 24px;
-  height: 24px;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   place-items: center;
   border: 0;
   border-radius: var(--photon-radius-control);
@@ -356,6 +371,9 @@ select {
 }
 
 .photon-new-tab {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   border-radius: var(--photon-radius-control) !important;
   background: transparent !important;
@@ -389,8 +407,8 @@ select {
 
 .photon-window-control {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border: 0;
   border-radius: var(--photon-radius-control);
@@ -595,10 +613,11 @@ select {
 
 .photon-page-area {
   position: absolute;
-  inset: var(--photon-chrome-height) 0 0;
+  inset: calc(var(--photon-chrome-height) + var(--photon-window-inset)) var(--photon-window-inset)
+    var(--photon-window-inset);
   box-sizing: border-box;
   background: var(--photon-color-canvas);
-  padding: 4px;
+  border-radius: var(--photon-radius-inner-window);
   overflow: hidden;
 }
 
@@ -608,7 +627,19 @@ select {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  border-radius: 4px;
+  background: var(--photon-color-canvas);
+  border-radius: inherit;
+  clip-path: inset(0 round var(--photon-radius-inner-window));
+}
+
+.photon-page-surface::after {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  border: 1px solid var(--photon-color-border);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
 }
 
 .photon-browser-view,
@@ -623,11 +654,16 @@ select {
 
 .photon-browser-view {
   z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .photon-webview {
   display: flex;
   border: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  clip-path: inset(0 round var(--photon-radius-inner-window));
 }
 
 .browser-overlay-layer {
@@ -782,6 +818,7 @@ select {
   margin: 0 auto;
   padding-block: var(--photon-space-8) 64px;
   color: var(--photon-color-text-primary);
+  animation: photon-content-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
 }
 
 .photon-settings-heading {
@@ -1025,10 +1062,6 @@ select {
   transform: rotate(180deg);
 }
 
-.photon-viewport {
-  animation: photon-viewport-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
-}
-
 .photon-new-tab-brand,
 .photon-new-tab-form {
   animation: photon-content-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
@@ -1048,26 +1081,6 @@ select {
 .photon-theme-switching *::after {
   animation: none !important;
   transition: none !important;
-}
-
-.photon-settings-page,
-.photon-settings-page *,
-.photon-settings-page *::before,
-.photon-settings-page *::after {
-  animation: none !important;
-  transition: none !important;
-}
-
-@keyframes photon-viewport-enter {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes photon-content-enter {

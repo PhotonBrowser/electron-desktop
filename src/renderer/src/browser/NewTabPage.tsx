@@ -1,7 +1,7 @@
 import { Input } from "@heroui/react"
 import { Search } from "lucide-react"
 import { useState, type FormEvent } from "react"
-import photonLogo from "@resources/photon_logo.png"
+import photonLogo from "@resources/logo.svg"
 
 export function NewTabPage(): React.JSX.Element {
   const [value, setValue] = useState("")
