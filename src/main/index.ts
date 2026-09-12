@@ -2,7 +2,7 @@ import { app, BaseWindow, nativeTheme } from "electron"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import icon from "@resources/icon.png?asset"
-import type { BrowserNavigationCommand, PhotonSnapshot, TabId } from "@/shared/photon-api"
+import type { PhotonNavigationRequest, PhotonSnapshot } from "@/shared/photon-api"
 import { IPC_CHANNELS } from "@/shared/ipc-channels"
 import { TabManager } from "./browser/tab-manager"
 import { createInternalPageRegistry } from "./browser/internal-pages.mts"
@@ -68,15 +68,15 @@ async function createBrowserWindow(): Promise<void> {
   tabManager = new TabManager({
     onChange: updateQueue.enqueue,
     onFocusOmnibox: focusOmniboxInChrome,
-    onFocusPage: (tabId) => sendNavigationCommand(chromeView.webContents, tabId, "focus"),
-    onNavigationCommand: (tabId, command) =>
-      sendNavigationCommand(chromeView.webContents, tabId, command),
+    onFocusPage: (tabId) =>
+      sendNavigationCommand(chromeView.webContents, { tabId, command: "focus" }),
+    onNavigationCommand: (request) => sendNavigationCommand(chromeView.webContents, request),
     onCloseWindow: () => browserWindow.close(),
     pages: internalPages,
   })
   unregisterBrowserSession = configureBrowserSession(chromeView.webContents, (url) => {
     if (!tabManager) throw new Error("Photon tab manager is not ready")
-    return tabManager.createTab(url)
+    return tabManager.createTab(url, false)
   })
   registerBrowserIpc({
     browserWindow,
@@ -113,11 +113,10 @@ async function createBrowserWindow(): Promise<void> {
 
 function sendNavigationCommand(
   chromeWebContents: Electron.WebContents,
-  tabId: TabId,
-  command: BrowserNavigationCommand,
+  request: PhotonNavigationRequest,
 ): void {
   if (!chromeWebContents.isDestroyed()) {
-    chromeWebContents.send(IPC_CHANNELS.navigation.command, tabId, command)
+    chromeWebContents.send(IPC_CHANNELS.navigation.command, request)
   }
 }
 

@@ -8,10 +8,9 @@ import type {
 } from "electron"
 import { useEffect, useRef, type RefObject } from "react"
 import type {
-  BrowserNavigationCommand,
   BrowserTab,
+  PhotonNavigationRequest,
   PhotonWebviewEventChanges,
-  TabId,
 } from "@/shared/photon-api"
 import { BROWSER_DEFAULTS } from "@/shared/browser-constants"
 import { WEBVIEW_EVENTS } from "@/shared/webview-events"
@@ -81,13 +80,16 @@ export function useWebviewEvents({ webviewRef, tab, active }: UseWebviewEventsOp
     const handleRenderProcessGone = (): void => {
       update({ loading: false, crashed: true, error: null })
     }
-    const handleCommand = (tabId: TabId, command: BrowserNavigationCommand): void => {
-      if (tabId !== tabRef.current.id) return
-      if (command === "back") webview.goBack()
-      else if (command === "forward") webview.goForward()
-      else if (command === "reload") webview.reload()
-      else if (command === "stop") webview.stop()
-      else if (command === "devtools") {
+    const handleCommand = (request: PhotonNavigationRequest): void => {
+      if (request.tabId !== tabRef.current.id) return
+      if (request.command === "navigate") {
+        // A guest may reject when a newer navigation or teardown wins the race.
+        void webview.loadURL(request.url).catch(() => undefined)
+      } else if (request.command === "back") webview.goBack()
+      else if (request.command === "forward") webview.goForward()
+      else if (request.command === "reload") webview.reload()
+      else if (request.command === "stop") webview.stop()
+      else if (request.command === "devtools") {
         if (import.meta.env.DEV) webview.openDevTools()
       } else {
         webview.focus()

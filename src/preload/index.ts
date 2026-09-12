@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron"
 import type {
-  BrowserNavigationCommand,
   BrowserDownload,
   DownloadId,
   MemorySaverSettings,
   PhotonBrowserUpdateEnvelope,
   PhotonAPI,
   PhotonPerformanceMetrics,
+  PhotonNavigationRequest,
   PhotonSnapshot,
   PhotonWebviewEventChanges,
   TabId,
@@ -90,9 +90,8 @@ const photonAPI: PhotonAPI = {
   onNavigationCommand: (listener) => {
     const handleCommand = (
       _event: Electron.IpcRendererEvent,
-      tabId: TabId,
-      command: BrowserNavigationCommand,
-    ): void => listener(tabId, command)
+      request: PhotonNavigationRequest,
+    ): void => listener(request)
     ipcRenderer.on(IPC_CHANNELS.navigation.command, handleCommand)
     return () => ipcRenderer.off(IPC_CHANNELS.navigation.command, handleCommand)
   },

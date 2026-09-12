@@ -2,7 +2,12 @@ export type TabId = string & { readonly __tabId: unique symbol }
 export type DownloadId = string & { readonly __downloadId: unique symbol }
 export type MemorySaverLevel = "moderate" | "balanced" | "maximum"
 export type InternalPageId = "new-tab" | "settings"
-export type BrowserNavigationCommand = "back" | "forward" | "reload" | "stop" | "focus" | "devtools"
+export type BrowserNavigationCommand =
+  "back" | "forward" | "reload" | "stop" | "focus" | "devtools" | "navigate"
+
+export type PhotonNavigationRequest =
+  | { tabId: TabId; command: "navigate"; url: string }
+  | { tabId: TabId; command: Exclude<BrowserNavigationCommand, "navigate"> }
 
 export interface MemorySaverSettings {
   enabled: boolean
@@ -166,7 +171,5 @@ export interface PhotonAPI {
   performance: PhotonPerformanceAPI
   onUpdates: (listener: (updates: PhotonBrowserUpdateEnvelope[]) => void) => () => void
   onFocusOmnibox: (listener: () => void) => () => void
-  onNavigationCommand: (
-    listener: (tabId: TabId, command: BrowserNavigationCommand) => void,
-  ) => () => void
+  onNavigationCommand: (listener: (request: PhotonNavigationRequest) => void) => () => void
 }

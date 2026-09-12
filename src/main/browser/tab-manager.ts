@@ -3,6 +3,7 @@ import type {
   BrowserTab,
   BrowserTabChanges,
   MemorySaverSettings,
+  PhotonNavigationRequest,
   PhotonBrowserUpdate,
   TabId,
 } from "@/shared/photon-api"
@@ -34,7 +35,12 @@ export interface TabManagerDiagnostics {
 
 type StateListener = (update: PhotonBrowserUpdate) => void
 type FocusPageListener = (tabId: TabId) => void
-type NavigationCommandListener = (tabId: TabId, command: BrowserNavigationCommand) => void
+type NavigationCommandListener = (request: PhotonNavigationRequest) => void
+
+interface ClosedTab {
+  url: string
+  title: string
+}
 
 export interface TabManagerOptions {
   onChange: StateListener
@@ -54,7 +60,7 @@ export class TabManager {
   private readonly pages: InternalPageRegistry
   private readonly tabs = new Map<TabId, TabRecord>()
   private readonly lifecycle: TabLifecycle
-  private readonly recentlyClosedUrls: string[] = []
+  private readonly recentlyClosedTabs: ClosedTab[] = []
   private activeTabId: TabId | null = null
   private nextTabNumber = 1
 
@@ -142,7 +148,7 @@ export class TabManager {
 
     const wasActive = id === this.activeTabId
     const nextId = ids[index + 1] ?? ids[index - 1]
-    this.recentlyClosedUrls.push(record.state.url)
+    this.recentlyClosedTabs.push({ url: record.state.url, title: record.state.title })
     this.destroyRecord(id)
     this.onChange({ type: "tab-removed", tabId: id })
     if (!wasActive || !nextId) return
@@ -200,8 +206,12 @@ export class TabManager {
   }
 
   reopenClosedTab(): void {
-    const url = this.recentlyClosedUrls.pop()
-    if (url) this.createTab(url, false)
+    const closedTab = this.recentlyClosedTabs.pop()
+    if (!closedTab) return
+
+    const tabId = this.createTab(closedTab.url, false)
+    const record = this.tabs.get(tabId)
+    if (record) this.updateTab(record, { ...record.state, title: closedTab.title })
   }
 
   setMemorySaverSettings(settings: MemorySaverSettings): void {
@@ -255,6 +265,7 @@ export class TabManager {
     const record = this.tabs.get(id)
     if (!record) return
 
+    const wasWebTab = record.state.kind === "web"
     const nextState = createNavigatedTab(record.state, input, this.pages)
     if (nextState.kind === "internal") {
       this.lifecycle.clear(record)
@@ -264,14 +275,17 @@ export class TabManager {
 
     this.activatePage(record)
     this.updateTab(record, nextState)
+    if (wasWebTab) this.onNavigationCommand({ tabId: id, command: "navigate", url: nextState.url })
   }
 
-  private sendNavigationCommand(command: Exclude<BrowserNavigationCommand, "focus">): void {
+  private sendNavigationCommand(
+    command: Exclude<BrowserNavigationCommand, "focus" | "navigate">,
+  ): void {
     const record = this.activeRecord()
     if (!record || record.state.kind !== "web") return
     if (command === "back" && !record.state.canGoBack) return
     if (command === "forward" && !record.state.canGoForward) return
-    this.onNavigationCommand(record.state.id, command)
+    this.onNavigationCommand({ tabId: record.state.id, command })
   }
 
   private updateTab(record: TabRecord, nextState: BrowserTab): void {
