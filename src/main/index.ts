@@ -7,7 +7,12 @@ import { IPC_CHANNELS } from "@/shared/ipc-channels"
 import { TabManager } from "./browser/tab-manager"
 import { createInternalPageRegistry } from "./browser/internal-pages.mts"
 import { WindowComposition } from "./window/window-composition"
-import { registerBrowserIpc, sendOmniboxFocus, unregisterBrowserIpc } from "./ipc/browser-ipc"
+import {
+  registerBrowserIpc,
+  sendFindFocus,
+  sendOmniboxFocus,
+  unregisterBrowserIpc,
+} from "./ipc/browser-ipc"
 import { createBrowserUpdateQueue } from "./ipc/browser-update-queue"
 import { registerBrowserShortcuts } from "./window/browser-shortcuts"
 import { DownloadManager } from "./browser/download-manager.mts"
@@ -92,6 +97,10 @@ async function createBrowserWindow(): Promise<void> {
     chromeWebContents: chromeView.webContents,
     tabManager,
     focusOmnibox: focusOmniboxInChrome,
+    focusFind: () => {
+      composition.focusChrome()
+      sendFindFocus(chromeView.webContents)
+    },
   })
   browserWindow.on("maximize", () =>
     updateQueue.enqueue({ type: "window-maximized-changed", isMaximized: true }),

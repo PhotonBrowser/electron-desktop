@@ -24,6 +24,7 @@ function input(
 
 test("resolves browser shortcuts with exact modifiers", () => {
   assert.equal(resolveBrowserShortcut(input({ key: "L" })), "focus-omnibox")
+  assert.equal(resolveBrowserShortcut(input({ key: "F" })), "focus-find")
   assert.equal(resolveBrowserShortcut(input({ key: "T" })), "new-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "W" })), "close-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "R" })), "reload")
@@ -39,7 +40,7 @@ test("resolves browser shortcuts with exact modifiers", () => {
     "forward",
   )
   assert.equal(resolveBrowserShortcut(input({ key: "r", shift: true })), undefined)
-  assert.equal(resolveBrowserShortcut(input({ key: "f" })), undefined)
+  assert.equal(resolveBrowserShortcut(input({ key: "f", shift: true })), undefined)
   assert.equal(resolveBrowserShortcut(input({ type: "char" })), undefined)
   assert.equal(resolveBrowserShortcut(input({ isAutoRepeat: true })), undefined)
 })
@@ -51,6 +52,7 @@ test("attaches shortcuts to webview guests created after registration", () => {
   guest.isDestroyed = () => false
 
   let focusedOmnibox = 0
+  let focusedFind = 0
   const manager = {
     createTab: () => "tab-2" as TabId,
     reopenClosedTab: () => undefined,
@@ -67,6 +69,9 @@ test("attaches shortcuts to webview guests created after registration", () => {
     focusOmnibox: () => {
       focusedOmnibox += 1
     },
+    focusFind: () => {
+      focusedFind += 1
+    },
   })
 
   chrome.emit("did-attach-webview", {}, guest)
@@ -75,6 +80,8 @@ test("attaches shortcuts to webview guests created after registration", () => {
   guest.emit("before-input-event", event, input())
 
   assert.equal(focusedOmnibox, 1)
+  guest.emit("before-input-event", event, input({ key: "f" }))
+  assert.equal(focusedFind, 1)
   guest.emit("destroyed")
   guest.emit("before-input-event", event, input())
   assert.equal(focusedOmnibox, 1)

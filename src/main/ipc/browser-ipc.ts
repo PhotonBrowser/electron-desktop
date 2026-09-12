@@ -135,3 +135,7 @@ function contextFor(event: IpcMainInvokeEvent): BrowserIpcContext {
 export function sendOmniboxFocus(chromeWebContents: WebContents): void {
   if (!chromeWebContents.isDestroyed()) chromeWebContents.send(IPC_CHANNELS.focusOmnibox)
 }
+
+export function sendFindFocus(chromeWebContents: WebContents): void {
+  if (!chromeWebContents.isDestroyed()) chromeWebContents.send(IPC_CHANNELS.focusFind)
+}

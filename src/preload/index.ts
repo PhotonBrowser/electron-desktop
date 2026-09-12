@@ -87,6 +87,11 @@ const photonAPI: PhotonAPI = {
     ipcRenderer.on(IPC_CHANNELS.focusOmnibox, handleFocus)
     return () => ipcRenderer.off(IPC_CHANNELS.focusOmnibox, handleFocus)
   },
+  onFocusFind: (listener) => {
+    const handleFocus = (): void => listener()
+    ipcRenderer.on(IPC_CHANNELS.focusFind, handleFocus)
+    return () => ipcRenderer.off(IPC_CHANNELS.focusFind, handleFocus)
+  },
   onNavigationCommand: (listener) => {
     const handleCommand = (
       _event: Electron.IpcRendererEvent,

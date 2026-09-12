@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { useCallback, useRef, useState } from "react"
 import { Titlebar } from "../browser/Titlebar"
 import { Toolbar } from "../browser/Toolbar"
 import { NewTabPage } from "../browser/NewTabPage"
@@ -10,6 +10,9 @@ import { useBrowserStore } from "../stores/browser-store"
 import { useBrowserSync } from "./hooks/useBrowserSync"
 import { useMemorySaverSync } from "./hooks/useMemorySaverSync"
 import { usePhotonTheme } from "./hooks/usePhotonTheme"
+import { FindBar } from "../features/find/components/FindBar"
+import type { FindController } from "../features/find/find.types"
+import type { TabId } from "@/shared/photon-api"
 
 function App(): React.JSX.Element {
   const addressInput = useRef<HTMLInputElement>(null)
@@ -19,6 +22,13 @@ function App(): React.JSX.Element {
   const themeMode = useBrowserStore((state) => state.themeMode)
   const memorySaverEnabled = useBrowserStore((state) => state.memorySaverEnabled)
   const memorySaverLevel = useBrowserStore((state) => state.memorySaverLevel)
+  const [findController, setFindController] = useState<FindController | null>(null)
+  const setActiveFindController = useCallback((next: FindController | null, tabId: TabId): void => {
+    setFindController((current) => {
+      if (next) return next
+      return current?.tabId === tabId ? null : current
+    })
+  }, [])
 
   useBrowserSync(addressInput)
   usePhotonTheme(themeMode)
@@ -35,11 +45,17 @@ function App(): React.JSX.Element {
           {tabs
             .filter((tab) => tab.kind === "web")
             .map((tab) => (
-              <BrowserView key={tab.id} active={tab.id === activeTabId} tab={tab} />
+              <BrowserView
+                key={tab.id}
+                active={tab.id === activeTabId}
+                tab={tab}
+                onFindControllerChange={setActiveFindController}
+              />
             ))}
           <div className="browser-overlay-layer">
             {activeTab?.internalPage === "new-tab" && <NewTabPage />}
             {activeTab?.internalPage === "settings" && <SettingsPage />}
+            <FindBar controller={findController} loading={activeTab?.loading ?? false} />
             <PerformanceOverlay />
           </div>
         </div>

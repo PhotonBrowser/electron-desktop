@@ -4,6 +4,7 @@ export const IPC_CHANNELS = {
     updates: "photon:browser-updates",
   },
   focusOmnibox: "photon:focus-omnibox",
+  focusFind: "photon:focus-find",
   navigation: {
     back: "photon:navigation:back",
     command: "photon:navigation-command",

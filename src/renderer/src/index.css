@@ -743,6 +743,77 @@ select {
   pointer-events: none;
 }
 
+.photon-find-bar {
+  display: flex;
+  position: absolute;
+  top: var(--photon-space-3);
+  right: var(--photon-space-3);
+  width: min(460px, calc(100% - var(--photon-space-6)));
+  height: calc(var(--photon-field-content-height) + (var(--photon-space-2) * 2));
+  align-items: center;
+  gap: var(--photon-space-1);
+  padding: var(--photon-space-1);
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-panel);
+  background: var(--photon-color-surface);
+  box-shadow: var(--photon-shadow-panel);
+  animation: photon-find-enter var(--photon-motion-enter) var(--photon-motion-ease);
+}
+
+.photon-find-input {
+  min-width: 0;
+  height: var(--photon-field-content-height);
+  flex: 1;
+  padding-inline: var(--photon-space-2);
+  border: 0;
+  outline: 0;
+  border-radius: var(--photon-radius-field);
+  background: var(--photon-color-canvas);
+  color: var(--photon-color-text-primary);
+}
+
+.photon-find-input::placeholder {
+  color: var(--photon-color-text-secondary);
+}
+
+.photon-find-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--photon-color-accent);
+}
+
+.photon-find-count {
+  min-width: 48px;
+  color: var(--photon-color-text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.photon-find-button {
+  width: var(--photon-control-size);
+  min-width: var(--photon-control-size);
+  height: var(--photon-control-size);
+  border-radius: var(--photon-radius-control) !important;
+  background: transparent !important;
+  color: var(--photon-color-text-primary) !important;
+}
+
+.photon-find-button:hover:not([data-disabled="true"]),
+.photon-find-button[data-hovered="true"]:not([data-disabled="true"]) {
+  background: var(--photon-color-surface-hover) !important;
+}
+
+@keyframes photon-find-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .browser-error-state {
   position: absolute;
   inset: 0;

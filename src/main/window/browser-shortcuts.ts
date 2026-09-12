@@ -4,6 +4,7 @@ import type { TabManager } from "../browser/tab-manager"
 
 export type BrowserShortcut =
   | "focus-omnibox"
+  | "focus-find"
   | "new-tab"
   | "reopen-tab"
   | "close-tab"
@@ -28,6 +29,7 @@ interface BrowserShortcutsContext {
     | "toggleDevTools"
   >
   focusOmnibox: () => void
+  focusFind: () => void
 }
 
 interface ShortcutInput {
@@ -54,6 +56,7 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
 
   if (hasPrimaryModifier && !hasOtherPrimaryModifier && !input.shift && !input.alt) {
     if (key === "l") return "focus-omnibox"
+    if (key === "f") return "focus-find"
     if (key === "t") return "new-tab"
     if (key === "w") return "close-tab"
     if (key === "r") return "reload"
@@ -87,7 +90,7 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
 }
 
 export function registerBrowserShortcuts(context: BrowserShortcutsContext): () => void {
-  const { tabManager, focusOmnibox } = context
+  const { tabManager, focusOmnibox, focusFind } = context
   const attachedWebContents = new Set<WebContents>()
   const destroyedHandlers = new Map<WebContents, () => void>()
   const handleBeforeInputEvent = (event: Event, input: Input): void => {
@@ -98,6 +101,9 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
     switch (shortcut) {
       case "focus-omnibox":
         focusOmnibox()
+        return
+      case "focus-find":
+        focusFind()
         return
       case "new-tab":
         tabManager.createTab()

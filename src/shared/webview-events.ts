@@ -1,6 +1,7 @@
 export const WEBVIEW_EVENTS = {
   didAttach: "did-attach-webview",
   didFailLoad: "did-fail-load",
+  foundInPage: "found-in-page",
   didNavigate: "did-navigate",
   didNavigateInPage: "did-navigate-in-page",
   didStartLoading: "did-start-loading",

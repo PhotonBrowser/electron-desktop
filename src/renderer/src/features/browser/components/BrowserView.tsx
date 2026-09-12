@@ -1,17 +1,21 @@
 import type { WebviewTag } from "electron"
-import { memo, useCallback, useRef, type CSSProperties } from "react"
-import type { BrowserTab } from "@/shared/photon-api"
+import { memo, useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react"
+import type { BrowserTab, TabId } from "@/shared/photon-api"
+import { WEBVIEW_EVENTS } from "@/shared/webview-events"
+import type { FindController } from "../../find/find.types"
 import { useWebviewEvents } from "../hooks/useWebviewEvents"
 
 interface BrowserViewProps {
   tab: BrowserTab
   active: boolean
+  onFindControllerChange: (controller: FindController | null, tabId: TabId) => void
 }
 
 /** The renderer-owned boundary around one stable Electron DOM webview guest. */
 export const BrowserView = memo(function BrowserView({
   tab,
   active,
+  onFindControllerChange,
 }: BrowserViewProps): React.JSX.Element | null {
   const webviewRef = useRef<WebviewTag>(null)
   const initialUrl = useRef(tab.url)
@@ -24,6 +28,46 @@ export const BrowserView = memo(function BrowserView({
     webview.setAttribute("allowpopups", "")
     webview.setAttribute("src", initialUrl.current)
   }, [])
+  const findController = useMemo<FindController>(
+    () => ({
+      tabId: tab.id,
+      find: (query, forward) => {
+        const webview = webviewRef.current
+        if (!webview) return null
+        return webview.findInPage(query, { findNext: true, forward })
+      },
+      stop: () => webviewRef.current?.stopFindInPage("clearSelection"),
+      focus: () => {
+        try {
+          webviewRef.current?.focus()
+        } catch {
+          // A crashed or destroyed guest cannot receive focus.
+        }
+      },
+      subscribe: (listener) => {
+        const webview = webviewRef.current
+        if (!webview) return () => undefined
+        const handleFoundInPage = (event: Electron.FoundInPageEvent): void =>
+          listener({
+            requestId: event.result.requestId,
+            activeMatchOrdinal: event.result.activeMatchOrdinal,
+            matches: event.result.matches,
+          })
+        try {
+          webview.addEventListener(WEBVIEW_EVENTS.foundInPage, handleFoundInPage)
+        } catch {
+          return () => undefined
+        }
+        return () => webview.removeEventListener(WEBVIEW_EVENTS.foundInPage, handleFoundInPage)
+      },
+    }),
+    [tab.id],
+  )
+  useEffect(() => {
+    if (!active || tab.lifecycleState === "frozen") return
+    onFindControllerChange(findController, tab.id)
+    return () => onFindControllerChange(null, tab.id)
+  }, [active, findController, onFindControllerChange, tab.id, tab.lifecycleState])
   useWebviewEvents({ webviewRef, tab, active })
 
   if (tab.lifecycleState === "frozen") return null

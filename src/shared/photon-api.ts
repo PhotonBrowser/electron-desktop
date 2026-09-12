@@ -171,5 +171,6 @@ export interface PhotonAPI {
   performance: PhotonPerformanceAPI
   onUpdates: (listener: (updates: PhotonBrowserUpdateEnvelope[]) => void) => () => void
   onFocusOmnibox: (listener: () => void) => () => void
+  onFocusFind: (listener: () => void) => () => void
   onNavigationCommand: (listener: (request: PhotonNavigationRequest) => void) => () => void
 }
