@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import type { BrowserNavigationCommand, PhotonBrowserUpdate, TabId } from "@/preload/photon-api"
+import type { BrowserNavigationCommand, PhotonBrowserUpdate, TabId } from "@/shared/photon-api"
 import { createInternalPageRegistry } from "./internal-pages.mts"
 import { TabManager } from "./tab-manager.ts"
 
@@ -37,7 +37,7 @@ test("starts with one internal New Tab and no guest ownership in main", () => {
   })
   assert.deepEqual(manager.getDiagnostics().tabs[0], {
     tabId: "tab-1",
-    webviewAttached: false,
+    webviewMounted: false,
   })
   manager.dispose()
 })
@@ -118,7 +118,7 @@ test("switching tabs preserves each tab's browser state", async () => {
   assert.equal(manager.getSnapshot().activeTabId, firstTabId)
   assert.equal(manager.getSnapshot().tabs[0]?.url, "https://first.example/")
   assert.equal(manager.getSnapshot().tabs[1]?.id, secondTabId)
-  assert.equal(manager.getDiagnostics().tabs[0]?.webviewAttached, true)
+  assert.equal(manager.getDiagnostics().tabs[0]?.webviewMounted, true)
   manager.dispose()
 })
 

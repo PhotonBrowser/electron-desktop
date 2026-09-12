@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import test from "node:test"
-import type { BrowserWindow } from "electron"
-import type { TabManager } from "../browser/tab-manager.ts"
+import type { WebContents } from "electron"
+import type { TabId } from "@/shared/photon-api"
 import { registerBrowserShortcuts, resolveBrowserShortcut } from "./browser-shortcuts.ts"
 
 function input(
@@ -28,6 +28,7 @@ test("resolves browser shortcuts with exact modifiers", () => {
   assert.equal(resolveBrowserShortcut(input({ key: "Tab", shift: true })), "previous-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "T", shift: true })), "reopen-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "r", shift: true })), undefined)
+  assert.equal(resolveBrowserShortcut(input({ key: "f" })), undefined)
   assert.equal(resolveBrowserShortcut(input({ type: "char" })), undefined)
   assert.equal(resolveBrowserShortcut(input({ isAutoRepeat: true })), undefined)
 })
@@ -40,21 +41,24 @@ test("attaches shortcuts to webview guests created after registration", () => {
 
   let focusedOmnibox = 0
   const manager = {
-    createTab: () => "tab-2",
+    createTab: () => "tab-2" as TabId,
+    reopenClosedTab: () => undefined,
     closeActiveTab: () => undefined,
     reload: () => undefined,
     selectRelativeTab: () => undefined,
     back: () => undefined,
     forward: () => undefined,
+    toggleDevTools: () => undefined,
   }
   const unregister = registerBrowserShortcuts({
-    browserWindow: { webContents: chrome } as unknown as BrowserWindow,
-    tabManager: manager as unknown as TabManager,
+    chromeWebContents: chrome as unknown as WebContents,
+    tabManager: manager,
     focusOmnibox: () => {
       focusedOmnibox += 1
     },
   })
 
+  chrome.emit("did-attach-webview", {}, guest)
   chrome.emit("did-attach-webview", {}, guest)
   const event = { preventDefault: () => undefined }
   guest.emit("before-input-event", event, input())
