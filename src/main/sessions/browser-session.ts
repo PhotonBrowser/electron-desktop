@@ -7,6 +7,7 @@ import {
 } from "electron"
 import type { TabId } from "@/shared/photon-api"
 import { WEBVIEW_EVENTS } from "@/shared/webview-events"
+import { showBrowserContextMenu } from "./browser-context-menu"
 
 type CreateTab = (url: string, focusOmnibox: boolean) => TabId
 let configuredSessionCount = 0
@@ -51,12 +52,19 @@ export function configureBrowserSession(
     const handleWillNavigate = (details: Event<WebContentsWillNavigateEventParams>): void => {
       if (!isWebUrl(details.url)) details.preventDefault()
     }
+    const handleContextMenu = (_event: Event, params: Electron.ContextMenuParams): void => {
+      showBrowserContextMenu(guest, params)
+    }
     guest.setWindowOpenHandler((details) => {
       if (isWebUrl(details.url)) createTab(details.url, false)
       return { action: "deny" }
     })
     guest.on(WEBVIEW_EVENTS.willNavigate, handleWillNavigate)
-    guest.once("destroyed", () => guest.off(WEBVIEW_EVENTS.willNavigate, handleWillNavigate))
+    guest.on("context-menu", handleContextMenu)
+    guest.once("destroyed", () => {
+      guest.off(WEBVIEW_EVENTS.willNavigate, handleWillNavigate)
+      guest.off("context-menu", handleContextMenu)
+    })
   }
 
   chromeWebContents.on(WEBVIEW_EVENTS.willAttach, handleWillAttachWebview)
