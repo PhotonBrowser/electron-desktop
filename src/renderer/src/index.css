@@ -472,6 +472,18 @@ select {
   color: var(--photon-color-text-secondary);
 }
 
+.photon-browser-menu-trigger {
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.photon-browser-menu-trigger > svg {
+  margin: 0;
+  align-self: center;
+  justify-self: center;
+}
+
 .photon-omnibox-form,
 .photon-omnibox-wrap {
   min-width: 0;

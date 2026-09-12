@@ -6,7 +6,7 @@ export function BrowserMenu(): React.JSX.Element {
     <DropDown
       trigger={<EllipsisVertical aria-hidden="true" size={19} />}
       triggerLabel="Browser menu"
-      triggerClassName="photon-toolbar-button"
+      triggerClassName="photon-toolbar-button photon-browser-menu-trigger"
       items={[
         {
           id: "new-tab",
