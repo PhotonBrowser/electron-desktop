@@ -1,8 +1,10 @@
 # Photon overlay components
 
-These wrappers keep Photon overlays consistent inside the persistent chrome
-renderer. HeroUI owns portal placement, focus management, Escape handling, and
-outside dismissal for `Modal`, `Popover`, and `DropDown`.
+`DropDown` is the shared menu wrapper used by browser chrome. HeroUI owns its
+portal placement, focus management, Escape handling, and outside dismissal.
+
+Feature-specific overlays should use HeroUI directly when they need different
+semantics, as the site-security popover and settings controls do.
 
 The renderer z-index scale is intentionally limited to these Tailwind tiers:
 
