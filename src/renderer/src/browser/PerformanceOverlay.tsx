@@ -8,22 +8,10 @@ function formatMB(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(0)} MB`
 }
 
+/** Development diagnostics rendered by the persistent chrome renderer. */
 export function PerformanceOverlay(): React.JSX.Element {
   const [metrics, setMetrics] = useState<PhotonPerformanceMetrics | undefined>()
-  const [siteSecurityVisible, setSiteSecurityVisible] = useState(false)
-  const enabled =
-    import.meta.env.DEV &&
-    new URLSearchParams(window.location.search).has("perf") &&
-    !siteSecurityVisible
-
-  useEffect(() => {
-    const unsubscribeState = window.photonOverlay.onState(() => setSiteSecurityVisible(true))
-    const unsubscribeHidden = window.photonOverlay.onHidden(() => setSiteSecurityVisible(false))
-    return () => {
-      unsubscribeState()
-      unsubscribeHidden()
-    }
-  }, [])
+  const enabled = import.meta.env.DEV && new URLSearchParams(window.location.search).has("perf")
 
   useEffect(() => {
     if (!enabled) return
@@ -54,7 +42,7 @@ export function PerformanceOverlay(): React.JSX.Element {
   if (!enabled) return <></>
 
   return (
-    <div className="perf-overlay">
+    <div className="perf-overlay z-50">
       <div>
         CPU{" "}
         <span className="perf-value">{metrics ? `${metrics.cpuPercent.toFixed(1)}%` : "…"}</span>
@@ -77,23 +65,10 @@ export function PerformanceOverlay(): React.JSX.Element {
       {metrics?.tabs.map((tab) => (
         <div key={tab.tabId}>
           {tab.tabId}{" "}
-          <span className="perf-value">{tab.pageRendererInitialized ? "page" : "chrome-only"}</span>
+          <span className="perf-value">{tab.webviewAttached ? "webview" : "chrome-only"}</span>
         </div>
       ))}
-      {metrics?.processes.map((process) => (
-        <div key={`${process.type}-${process.pid}`}>
-          {process.type} {process.pid}{" "}
-          <span className="perf-value">{formatMB(process.workingSetBytes)}</span>
-        </div>
-      ))}
-      {metrics?.processes.flatMap((process) =>
-        process.webContents.map((webContents) => (
-          <div key={`webcontents-${webContents.id}`}>
-            wc#{webContents.id} <span className="perf-value">{webContents.url || "<empty>"}</span>
-          </div>
-        )),
-      )}
-      <div className="perf-note">FPS sampling off · event-driven UI</div>
+      <div className="perf-note">Event-driven UI · no layout polling</div>
     </div>
   )
 }
@@ -101,6 +76,5 @@ export function PerformanceOverlay(): React.JSX.Element {
 function getActivePageLabel(metrics: PhotonPerformanceMetrics | undefined): string {
   if (!metrics) return "…"
   const activeTab = metrics.tabs.find((tab) => tab.tabId === metrics.activeTabId)
-  if (!activeTab?.pageRendererInitialized) return "none"
-  return activeTab.pageWebContentsId === null ? "destroyed" : String(activeTab.pageWebContentsId)
+  return activeTab?.webviewAttached ? "webview" : "none"
 }

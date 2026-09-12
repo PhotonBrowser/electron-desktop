@@ -1,9 +1,17 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
+@theme inline {
+  --color-panel: var(--photon-color-surface);
+  --color-fg: var(--photon-color-text-primary);
+  --color-line: var(--photon-color-border);
+  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 18%), 0 1px 2px rgb(0 0 0 / 12%);
+}
+
 html,
 body,
 #root {
+  position: relative;
   width: 100%;
   height: 100%;
   margin: 0;
@@ -57,7 +65,6 @@ body,
   --photon-color-danger: #c73838;
   --photon-color-on-danger: #ffffff;
   --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 10%);
-
   /* Keep HeroUI components on Photon’s semantic color roles. */
   --background: var(--photon-color-canvas);
   --foreground: var(--photon-color-text-primary);
@@ -186,7 +193,7 @@ select {
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
-  width: auto;
+  width: max-content;
   max-width: 100%;
   height: 100%;
   align-items: center;
@@ -197,10 +204,11 @@ select {
 
 .photon-tab-layout {
   position: relative;
-  z-index: 1;
   min-width: 0;
+  width: 240px;
+  min-width: 120px;
   max-width: 240px;
-  flex: 1 1 180px;
+  flex: 0 1 240px;
   cursor: grab;
   user-select: none;
   transition:
@@ -270,7 +278,6 @@ select {
 .photon-tab-active-background {
   position: absolute;
   inset: 0;
-  z-index: 0;
   border-radius: inherit;
   background: var(--photon-color-surface);
   opacity: 0;
@@ -284,7 +291,6 @@ select {
 
 .photon-tab-content {
   position: relative;
-  z-index: 1;
   display: flex;
   width: 100%;
   min-width: 0;
@@ -484,7 +490,6 @@ select {
 
 .photon-address-icon-button {
   position: absolute;
-  z-index: 1;
   top: 1px;
   left: 4px;
   width: 32px !important;
@@ -508,12 +513,191 @@ select {
   color: var(--photon-color-text-secondary);
 }
 
+.photon-site-security-popover {
+  position: fixed;
+  width: 320px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--photon-color-surface);
+  color: var(--photon-color-text-primary);
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 18%),
+    0 1px 2px rgb(0 0 0 / 12%);
+  pointer-events: auto;
+}
+
+.photon-site-security-header {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 10px 20px;
+}
+
+.photon-site-security-header strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photon-site-security-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--photon-color-text-secondary);
+  cursor: pointer;
+}
+
+.photon-site-security-close:hover {
+  background: var(--photon-color-surface-hover);
+  color: var(--photon-color-text-primary);
+}
+
+.photon-site-security-close:focus-visible {
+  outline: 2px solid var(--photon-color-accent);
+  outline-offset: -2px;
+}
+
+.photon-site-security-row {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  font-size: 16px;
+}
+
+.photon-site-security-row span {
+  min-width: 0;
+  flex: 1;
+}
+
+.photon-site-security-chevron {
+  flex: 0 0 auto;
+  color: var(--photon-color-text-secondary);
+}
+
 .photon-viewport {
   position: absolute;
-  top: var(--photon-chrome-height);
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
+  pointer-events: auto;
+}
+
+.photon-page-area {
+  position: absolute;
+  inset: var(--photon-chrome-height) 0 0;
+  box-sizing: border-box;
+  background: var(--photon-color-canvas);
+  padding: 4px;
+  overflow: hidden;
+}
+
+.photon-page-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.photon-browser-view,
+.photon-webview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.photon-browser-view {
+  z-index: 0;
+}
+
+.photon-webview {
+  display: flex;
+  border: 0;
+}
+
+.browser-overlay-layer {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  pointer-events: none;
+}
+
+.browser-overlay-layer > * {
+  pointer-events: auto;
+}
+
+.browser-overlay-layer > .perf-overlay {
+  pointer-events: none;
+}
+
+.browser-error-state {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: var(--photon-color-canvas);
+  color: var(--photon-color-text-primary);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.browser-error-state span {
+  color: var(--photon-color-text-secondary);
+}
+
+.browser-error-state button {
+  justify-self: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-control);
+  background: var(--photon-color-surface);
+  color: var(--photon-color-text-primary);
+  cursor: pointer;
+}
+
+.perf-overlay {
+  position: fixed;
+  top: 40px;
+  right: 8px;
+  max-height: calc(100% - 48px);
+  overflow: auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  color: #ccc;
+  font-family: monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.perf-value {
+  color: #fff;
+}
+
+.perf-note {
+  margin-top: 4px;
+  color: #aaa;
 }
 
 .photon-new-tab-page {
@@ -560,7 +744,6 @@ select {
   position: absolute;
   top: 50%;
   left: 16px;
-  z-index: 1;
   color: var(--photon-color-text-primary);
   transform: translateY(-50%);
 }

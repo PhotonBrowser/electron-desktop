@@ -26,27 +26,20 @@ test("resolves browser shortcuts with exact modifiers", () => {
   assert.equal(resolveBrowserShortcut(input({ key: "L" })), "focus-omnibox")
   assert.equal(resolveBrowserShortcut(input({ key: "Tab" })), "next-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "Tab", shift: true })), "previous-tab")
+  assert.equal(resolveBrowserShortcut(input({ key: "T", shift: true })), "reopen-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "r", shift: true })), undefined)
   assert.equal(resolveBrowserShortcut(input({ type: "char" })), undefined)
   assert.equal(resolveBrowserShortcut(input({ isAutoRepeat: true })), undefined)
 })
 
-test("attaches shortcuts to page views created after registration", () => {
+test("attaches shortcuts to webview guests created after registration", () => {
   const chrome = new EventEmitter() as EventEmitter & { isDestroyed: () => boolean }
-  const page = new EventEmitter() as EventEmitter & { isDestroyed: () => boolean }
+  const guest = new EventEmitter() as EventEmitter & { isDestroyed: () => boolean }
   chrome.isDestroyed = () => false
-  page.isDestroyed = () => false
+  guest.isDestroyed = () => false
 
-  type PageView = { webContents: typeof page }
-  let pageViewListener: ((view: PageView) => void) | undefined
   let focusedOmnibox = 0
   const manager = {
-    onPageViewCreated: (listener: (view: PageView) => void) => {
-      pageViewListener = listener
-      return () => {
-        pageViewListener = undefined
-      }
-    },
     createTab: () => "tab-2",
     closeActiveTab: () => undefined,
     reload: () => undefined,
@@ -62,12 +55,12 @@ test("attaches shortcuts to page views created after registration", () => {
     },
   })
 
-  pageViewListener?.({ webContents: page })
+  chrome.emit("did-attach-webview", {}, guest)
   const event = { preventDefault: () => undefined }
-  page.emit("before-input-event", event, input())
+  guest.emit("before-input-event", event, input())
 
   assert.equal(focusedOmnibox, 1)
   unregister()
-  page.emit("before-input-event", event, input())
+  guest.emit("before-input-event", event, input())
   assert.equal(focusedOmnibox, 1)
 })

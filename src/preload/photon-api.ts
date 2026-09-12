@@ -1,6 +1,7 @@
 export type TabId = string & { readonly __tabId: unique symbol }
 export type DownloadId = string & { readonly __downloadId: unique symbol }
 export type MemorySaverLevel = "moderate" | "balanced" | "maximum"
+export type BrowserNavigationCommand = "back" | "forward" | "reload" | "stop" | "focus" | "devtools"
 
 export interface MemorySaverSettings {
   enabled: boolean
@@ -33,6 +34,8 @@ export interface BrowserTab {
   lifecycleState: "active" | "frozen"
   canGoBack: boolean
   canGoForward: boolean
+  crashed: boolean
+  error: string | null
 }
 
 export interface PhotonSnapshot {
@@ -53,6 +56,8 @@ export interface BrowserTabChanges {
   lifecycleState?: BrowserTab["lifecycleState"]
   canGoBack?: boolean
   canGoForward?: boolean
+  crashed?: boolean
+  error?: string | null
 }
 
 export type PhotonBrowserUpdate =
@@ -76,11 +81,23 @@ export interface PhotonNavigationAPI {
   navigate: (url: string) => Promise<void>
 }
 
+export interface PhotonWebviewEventChanges {
+  url?: string
+  title?: string
+  faviconUrl?: string | null
+  loading?: boolean
+  canGoBack?: boolean
+  canGoForward?: boolean
+  crashed?: boolean
+  error?: string | null
+}
+
 export interface PhotonTabsAPI {
   create: () => Promise<TabId>
   select: (tabId: TabId) => Promise<void>
   close: (tabId: TabId) => Promise<void>
   reorder: (tabIds: TabId[]) => Promise<void>
+  update: (tabId: TabId, changes: PhotonWebviewEventChanges) => Promise<void>
 }
 
 export interface PhotonWindowAPI {
@@ -136,9 +153,7 @@ export interface PhotonWebContentsMetric {
 
 export interface PhotonTabDiagnostics {
   tabId: TabId
-  pageRendererInitialized: boolean
-  pageWebContentsId: number | null
-  pageProcessId: number | null
+  webviewAttached: boolean
 }
 
 export interface PhotonPerformanceAPI {
@@ -153,8 +168,9 @@ export interface PhotonAPI {
   memorySaver: PhotonMemorySaverAPI
   downloads: PhotonDownloadsAPI
   performance: PhotonPerformanceAPI
-  overlay: PhotonOverlayAPI
   onUpdates: (listener: (updates: PhotonBrowserUpdateEnvelope[]) => void) => () => void
   onFocusOmnibox: (listener: () => void) => () => void
+  onNavigationCommand: (
+    listener: (tabId: TabId, command: BrowserNavigationCommand) => void,
+  ) => () => void
 }
-import type { PhotonOverlayAPI } from "@/shared/overlay"

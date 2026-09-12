@@ -1,4 +1,4 @@
-import { app, session, shell, type BrowserWindow, type DownloadItem, type Event } from "electron"
+import { app, session, shell, type DownloadItem, type Event, type WebContents } from "electron"
 import { existsSync } from "node:fs"
 import { join } from "node:path"
 import type { BrowserDownload, DownloadId } from "@/preload/photon-api"
@@ -14,7 +14,7 @@ interface DownloadRecord {
 }
 
 export class DownloadManager {
-  private readonly browserWindow: BrowserWindow
+  private readonly chromeWebContents: WebContents
   private readonly downloads = new Map<DownloadId, DownloadRecord>()
   private readonly reservedPaths = new Set<string>()
   private readonly listeners = new Set<ChangeListener>()
@@ -25,8 +25,8 @@ export class DownloadManager {
     this.track(item)
   }
 
-  constructor(browserWindow: BrowserWindow) {
-    this.browserWindow = browserWindow
+  constructor(chromeWebContents: WebContents) {
+    this.chromeWebContents = chromeWebContents
     session.defaultSession.on("will-download", this.handleWillDownload)
   }
 
@@ -191,8 +191,8 @@ export class DownloadManager {
   private emit(): void {
     if (this.disposed) return
     for (const listener of this.listeners) listener()
-    if (!this.browserWindow.webContents.isDestroyed()) {
-      this.browserWindow.webContents.send("photon:downloads-changed", this.getSnapshot())
+    if (!this.chromeWebContents.isDestroyed()) {
+      this.chromeWebContents.send("photon:downloads-changed", this.getSnapshot())
     }
   }
 }

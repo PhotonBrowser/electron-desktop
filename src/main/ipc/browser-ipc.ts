@@ -1,37 +1,57 @@
-import { app, ipcMain, type BrowserWindow } from "electron"
-import {
-  OVERLAY_HIDDEN_CHANNEL,
-  OVERLAY_HIDE_CHANNEL,
-  OVERLAY_SHOW_SITE_SECURITY_CHANNEL,
-  type OverlayBounds,
-} from "@/shared/overlay"
-import type { SiteSecurity } from "@/shared/site-security"
+import { app, ipcMain, type BaseWindow, type WebContents } from "electron"
 import type {
   DownloadId,
   MemorySaverSettings,
   PhotonBrowserUpdateEnvelope,
   PhotonPerformanceMetrics,
   PhotonSnapshot,
+  PhotonWebviewEventChanges,
   TabId,
 } from "@/preload/photon-api"
 import type { TabManager } from "../browser/tab-manager"
 import type { DownloadManager } from "../browser/download-manager.mts"
-import type { WindowComposition } from "../window/window-composition"
 import { collectMetrics } from "../performance/metrics-collector"
 
 export const UPDATES_CHANNEL = "photon:browser-updates"
 export const FOCUS_OMNIBOX_CHANNEL = "photon:focus-omnibox"
+export const NAVIGATION_COMMAND_CHANNEL = "photon:navigation-command"
 
 interface BrowserIpcContext {
-  browserWindow: BrowserWindow
+  browserWindow: BaseWindow
+  chromeWebContents: WebContents
   tabManager: TabManager
   getSnapshot: () => PhotonSnapshot
   downloadManager: DownloadManager
-  composition: WindowComposition
 }
 
 function isTabIdList(value: unknown): value is TabId[] {
   return Array.isArray(value) && value.every((tabId): tabId is TabId => typeof tabId === "string")
+}
+
+function isTabId(value: unknown): value is TabId {
+  return typeof value === "string" && /^tab-\d+$/.test(value)
+}
+
+function isWebviewEventChanges(value: unknown): value is PhotonWebviewEventChanges {
+  if (typeof value !== "object" || value === null) return false
+  const changes = value as Record<string, unknown>
+  const stringOrUndefined = (key: string): boolean =>
+    changes[key] === undefined || typeof changes[key] === "string"
+  const booleanOrUndefined = (key: string): boolean =>
+    changes[key] === undefined || typeof changes[key] === "boolean"
+  const nullableStringOrUndefined = (key: string): boolean =>
+    changes[key] === undefined || changes[key] === null || typeof changes[key] === "string"
+
+  return (
+    stringOrUndefined("url") &&
+    stringOrUndefined("title") &&
+    nullableStringOrUndefined("faviconUrl") &&
+    booleanOrUndefined("loading") &&
+    booleanOrUndefined("canGoBack") &&
+    booleanOrUndefined("canGoForward") &&
+    booleanOrUndefined("crashed") &&
+    nullableStringOrUndefined("error")
+  )
 }
 
 function isDownloadId(value: unknown): value is DownloadId {
@@ -47,31 +67,8 @@ function isMemorySaverSettings(value: unknown): value is MemorySaverSettings {
   )
 }
 
-function isOverlayBounds(value: unknown): value is OverlayBounds {
-  if (typeof value !== "object" || value === null) return false
-  const bounds = value as Partial<Record<keyof OverlayBounds, unknown>>
-  return (
-    typeof bounds.x === "number" &&
-    typeof bounds.y === "number" &&
-    typeof bounds.width === "number" &&
-    typeof bounds.height === "number" &&
-    Number.isFinite(bounds.x) &&
-    Number.isFinite(bounds.y) &&
-    Number.isFinite(bounds.width) &&
-    Number.isFinite(bounds.height) &&
-    bounds.width > 0 &&
-    bounds.height > 0
-  )
-}
-
-function isSiteSecurity(value: unknown): value is SiteSecurity {
-  if (typeof value !== "object" || value === null) return false
-  const site = value as Partial<Record<keyof SiteSecurity, unknown>>
-  return typeof site.host === "string" && typeof site.isSecure === "boolean"
-}
-
 export function registerBrowserIpc(context: BrowserIpcContext): void {
-  const { browserWindow, tabManager, getSnapshot, downloadManager, composition } = context
+  const { browserWindow, chromeWebContents, tabManager, getSnapshot, downloadManager } = context
 
   ipcMain.handle("photon:browser:get-snapshot", () => getSnapshot())
   ipcMain.handle("photon:tabs:create", () => tabManager.createTab())
@@ -79,6 +76,11 @@ export function registerBrowserIpc(context: BrowserIpcContext): void {
   ipcMain.handle("photon:tabs:close", (_event, tabId: TabId) => tabManager.closeTab(tabId))
   ipcMain.handle("photon:tabs:reorder", (_event, tabIds: unknown) => {
     if (isTabIdList(tabIds)) tabManager.reorderTabs(tabIds)
+  })
+  ipcMain.handle("photon:tabs:update", (event, tabId: unknown, changes: unknown) => {
+    if (event.sender !== chromeWebContents || !isTabId(tabId) || !isWebviewEventChanges(changes))
+      return
+    tabManager.updateFromWebview(tabId, changes)
   })
   ipcMain.handle("photon:navigation:back", () => tabManager.back())
   ipcMain.handle("photon:navigation:forward", () => tabManager.forward())
@@ -102,21 +104,6 @@ export function registerBrowserIpc(context: BrowserIpcContext): void {
       collectMetrics(tabManager),
     )
   }
-  ipcMain.handle(OVERLAY_SHOW_SITE_SECURITY_CHANNEL, (_event, bounds: unknown, site: unknown) => {
-    if (!isOverlayBounds(bounds) || !isSiteSecurity(site)) return
-    composition.showOverlay({
-      kind: "browser",
-      bounds,
-      state: { kind: "site-security", site },
-    })
-    composition.focusOverlay()
-  })
-  ipcMain.handle(OVERLAY_HIDE_CHANNEL, () => {
-    composition.hideOverlay("browser")
-    if (!browserWindow.webContents.isDestroyed()) {
-      browserWindow.webContents.send(OVERLAY_HIDDEN_CHANNEL)
-    }
-  })
   for (const action of ["cancel", "pause", "resume", "open", "showInFolder"] as const) {
     ipcMain.handle(`photon:downloads:${action}`, (_event, id: unknown) => {
       if (!isDownloadId(id)) return
@@ -126,19 +113,15 @@ export function registerBrowserIpc(context: BrowserIpcContext): void {
 }
 
 export function sendBrowserUpdates(
-  browserWindow: BrowserWindow,
+  chromeWebContents: WebContents,
   updates: readonly PhotonBrowserUpdateEnvelope[],
 ): void {
-  if (updates.length === 0 || browserWindow.webContents.isDestroyed()) return
-  browserWindow.webContents.send(UPDATES_CHANNEL, updates)
+  if (updates.length === 0 || chromeWebContents.isDestroyed()) return
+  chromeWebContents.send(UPDATES_CHANNEL, updates)
 }
 
-export function sendOmniboxFocus(browserWindow: BrowserWindow): void {
-  if (browserWindow.isDestroyed()) return
-  const { webContents } = browserWindow
-  if (!webContents.isDestroyed()) {
-    webContents.send(FOCUS_OMNIBOX_CHANNEL)
-  }
+export function sendOmniboxFocus(chromeWebContents: WebContents): void {
+  if (!chromeWebContents.isDestroyed()) chromeWebContents.send(FOCUS_OMNIBOX_CHANNEL)
 }
 
 export function unregisterBrowserIpc(): void {
@@ -147,6 +130,7 @@ export function unregisterBrowserIpc(): void {
   ipcMain.removeHandler("photon:tabs:select")
   ipcMain.removeHandler("photon:tabs:close")
   ipcMain.removeHandler("photon:tabs:reorder")
+  ipcMain.removeHandler("photon:tabs:update")
   ipcMain.removeHandler("photon:navigation:back")
   ipcMain.removeHandler("photon:navigation:forward")
   ipcMain.removeHandler("photon:navigation:reload")
@@ -161,6 +145,4 @@ export function unregisterBrowserIpc(): void {
   }
   ipcMain.removeHandler("photon:downloads:get-snapshot")
   ipcMain.removeHandler("photon:performance:metrics")
-  ipcMain.removeHandler(OVERLAY_SHOW_SITE_SECURITY_CHANNEL)
-  ipcMain.removeHandler(OVERLAY_HIDE_CHANNEL)
 }

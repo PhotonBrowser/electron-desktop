@@ -1,18 +1,21 @@
-import type { BrowserWindow, Event, Input, WebContents } from "electron"
+import type { BaseWindow, Event, Input, WebContents } from "electron"
 import type { TabManager } from "../browser/tab-manager"
 
 export type BrowserShortcut =
   | "focus-omnibox"
   | "new-tab"
+  | "reopen-tab"
   | "close-tab"
   | "reload"
   | "next-tab"
   | "previous-tab"
   | "back"
   | "forward"
+  | "devtools"
 
 interface BrowserShortcutsContext {
-  browserWindow: BrowserWindow
+  browserWindow: BaseWindow
+  chromeWebContents?: WebContents
   tabManager: TabManager
   focusOmnibox: () => void
 }
@@ -47,6 +50,10 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
     if (key === "tab") return "next-tab"
   }
 
+  if (hasPrimaryModifier && !hasOtherPrimaryModifier && input.shift && !input.alt && key === "t") {
+    return "reopen-tab"
+  }
+
   if (
     hasPrimaryModifier &&
     !hasOtherPrimaryModifier &&
@@ -55,6 +62,10 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
     key === "tab"
   ) {
     return "previous-tab"
+  }
+
+  if (hasPrimaryModifier && !hasOtherPrimaryModifier && input.shift && !input.alt && key === "i") {
+    return "devtools"
   }
 
   if (!hasPrimaryModifier && !hasOtherPrimaryModifier && !input.shift && input.alt) {
@@ -66,7 +77,7 @@ export function resolveBrowserShortcut(input: ShortcutInput): BrowserShortcut | 
 }
 
 export function registerBrowserShortcuts(context: BrowserShortcutsContext): () => void {
-  const { browserWindow, tabManager, focusOmnibox } = context
+  const { tabManager, focusOmnibox } = context
   const attachedWebContents = new Set<WebContents>()
   const handleBeforeInputEvent = (event: Event, input: Input): void => {
     const shortcut = resolveBrowserShortcut(input)
@@ -79,6 +90,9 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
         return
       case "new-tab":
         tabManager.createTab()
+        return
+      case "reopen-tab":
+        tabManager.reopenClosedTab()
         return
       case "close-tab":
         tabManager.closeActiveTab()
@@ -98,6 +112,9 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
       case "forward":
         tabManager.forward()
         return
+      case "devtools":
+        tabManager.toggleDevTools()
+        return
     }
   }
   const attach = (webContents: WebContents): void => {
@@ -106,13 +123,16 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
     attachedWebContents.add(webContents)
   }
 
-  attach(browserWindow.webContents)
-  const unregisterPageViewListener = tabManager.onPageViewCreated((view) => {
-    attach(view.webContents)
-  })
+  const legacyWindow = context.browserWindow as BaseWindow & { webContents?: WebContents }
+  const chromeWebContents = context.chromeWebContents ?? legacyWindow.webContents
+  const handleGuestAttached = (_event: Event, guest: WebContents): void => attach(guest)
+  if (chromeWebContents) {
+    attach(chromeWebContents)
+    chromeWebContents.on("did-attach-webview", handleGuestAttached)
+  }
 
   return () => {
-    unregisterPageViewListener()
+    chromeWebContents?.off("did-attach-webview", handleGuestAttached)
     for (const webContents of attachedWebContents) {
       webContents.off("before-input-event", handleBeforeInputEvent)
     }

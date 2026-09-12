@@ -45,7 +45,7 @@ const BrowserTab = memo(function BrowserTab({ tab }: BrowserTabProps): React.JSX
       }}
     >
       <span aria-hidden="true" className="photon-tab-active-background" />
-      <span className="photon-tab-content">
+      <span className="photon-tab-content z-10">
         <span className="photon-tab-icon">
           {tab.lifecycleState === "frozen" ? (
             <BedDouble aria-label="Suspended tab" size={14} />
@@ -217,7 +217,7 @@ export function TabStrip(): React.JSX.Element {
         {orderedTabs.map((tab) => (
           <div
             key={tab.id}
-            className="photon-tab-layout"
+            className="photon-tab-layout z-10"
             data-drag-over={dropTargetTabId === tab.id ? "true" : undefined}
             data-dragging={draggedTabId === tab.id ? "true" : undefined}
             data-photon-tab={tab.id}

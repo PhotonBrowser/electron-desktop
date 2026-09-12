@@ -1,17 +1,20 @@
-import { app, BrowserWindow, nativeTheme } from "electron"
+import { app, BaseWindow, nativeTheme } from "electron"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import icon from "@resources/icon.png?asset"
 import type {
+  BrowserNavigationCommand,
   PhotonBrowserUpdate,
   PhotonBrowserUpdateEnvelope,
   PhotonSnapshot,
+  TabId,
 } from "@/preload/photon-api"
 import { TabManager } from "./browser/tab-manager"
 import { createInternalPageRegistry } from "./browser/internal-pages.mts"
 import { WindowComposition } from "./window/window-composition"
 import {
   registerBrowserIpc,
+  NAVIGATION_COMMAND_CHANNEL,
   sendBrowserUpdates,
   sendOmniboxFocus,
   unregisterBrowserIpc,
@@ -19,6 +22,8 @@ import {
 import { registerBrowserShortcuts } from "./window/browser-shortcuts"
 import { DownloadManager } from "./browser/download-manager.mts"
 import { PHOTON_THEME_COLORS } from "@/shared/theme-colors"
+import { createChromeView, loadChromeView } from "./views/chrome-view"
+import { configureBrowserSession } from "./sessions/browser-session"
 
 async function createBrowserWindow(): Promise<void> {
   const isMac = process.platform === "darwin"
@@ -26,33 +31,24 @@ async function createBrowserWindow(): Promise<void> {
     ? PHOTON_THEME_COLORS.darkWindowBackground
     : PHOTON_THEME_COLORS.lightWindowBackground
   const showPerformanceOverlay = !app.isPackaged && process.env["PHOTON_SHOW_PERF_OVERLAY"] === "1"
-  const browserWindow = new BrowserWindow({
+  const browserWindow = new BaseWindow({
     width: 1100,
     height: 760,
     show: false,
-    // Keep the chrome edge opaque so the inset page view cannot show through it.
+    // Keep the chrome edge opaque while the renderer hosts the page-area webview.
     backgroundColor: windowBackground,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: "hiddenInset" as const } : { frame: false }),
     ...(process.platform === "linux" ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, "../preload/index.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
   })
-
-  const composition = new WindowComposition(
-    browserWindow,
-    getOverlayPageUrl(showPerformanceOverlay),
-  )
+  const chromeView = createChromeView()
+  const composition = new WindowComposition(browserWindow, chromeView)
   const focusOmniboxInChrome = (): void => {
     composition.focusChrome()
-    sendOmniboxFocus(browserWindow)
+    sendOmniboxFocus(chromeView.webContents)
   }
   let tabManager: TabManager | undefined
-  const downloadManager = new DownloadManager(browserWindow)
+  const downloadManager = new DownloadManager(chromeView.webContents)
   const internalPages = createInternalPageRegistry(app.getName())
   let browserRevision = 0
   const getSnapshot = (): PhotonSnapshot => {
@@ -93,10 +89,11 @@ async function createBrowserWindow(): Promise<void> {
         .flat()
         .sort((first, second) => first.revision - second.revision)
       pendingUpdates.clear()
-      sendBrowserUpdates(browserWindow, updates)
+      sendBrowserUpdates(chromeView.webContents, updates)
     }, 16)
   }
   let unregisterShortcuts = (): void => undefined
+  let unregisterBrowserSession = (): void => undefined
   let isCleanedUp = false
   const cleanup = (): void => {
     if (isCleanedUp) return
@@ -104,6 +101,7 @@ async function createBrowserWindow(): Promise<void> {
     tabManager?.dispose()
     composition.dispose()
     unregisterShortcuts()
+    unregisterBrowserSession()
     unregisterBrowserIpc()
     downloadManager.dispose()
     if (updateFlushTimer !== undefined) clearTimeout(updateFlushTimer)
@@ -114,20 +112,26 @@ async function createBrowserWindow(): Promise<void> {
   tabManager = new TabManager({
     onChange: emitUpdate,
     onFocusOmnibox: focusOmniboxInChrome,
-    onFocusPage: (view) => composition.focusPage(view),
-    onPageViewChange: (view) => composition.attachActivePage(view),
+    onFocusPage: (tabId) => sendNavigationCommand(chromeView.webContents, tabId, "focus"),
+    onNavigationCommand: (tabId, command) =>
+      sendNavigationCommand(chromeView.webContents, tabId, command),
     onCloseWindow: () => browserWindow.close(),
     pages: internalPages,
   })
+  unregisterBrowserSession = configureBrowserSession(chromeView.webContents, (url) => {
+    if (!tabManager) throw new Error("Photon tab manager is not ready")
+    return tabManager.createTab(url)
+  })
   registerBrowserIpc({
     browserWindow,
+    chromeWebContents: chromeView.webContents,
     tabManager,
     getSnapshot,
     downloadManager,
-    composition,
   })
   unregisterShortcuts = registerBrowserShortcuts({
     browserWindow,
+    chromeWebContents: chromeView.webContents,
     tabManager,
     focusOmnibox: focusOmniboxInChrome,
   })
@@ -137,20 +141,25 @@ async function createBrowserWindow(): Promise<void> {
   browserWindow.on("unmaximize", () =>
     emitUpdate({ type: "window-maximized-changed", isMaximized: false }),
   )
-  browserWindow.once("ready-to-show", () => {
+  chromeView.webContents.once("did-finish-load", () => {
     // This is the first point where chrome has painted and the initial native layout is stable.
     composition.initialize()
     const activeTabId = tabManager?.getSnapshot().activeTabId
     if (activeTabId) void tabManager?.activateTab(activeTabId)
     browserWindow.show()
-    if (showPerformanceOverlay) composition.showOverlay({ kind: "perf" })
   })
   browserWindow.once("closed", cleanup)
 
-  if (process.env["ELECTRON_RENDERER_URL"]) {
-    void browserWindow.loadURL(process.env["ELECTRON_RENDERER_URL"])
-  } else {
-    void browserWindow.loadFile(join(__dirname, "../renderer/index.html"))
+  loadChromeView(chromeView, getChromePageUrl(showPerformanceOverlay))
+}
+
+function sendNavigationCommand(
+  chromeWebContents: Electron.WebContents,
+  tabId: TabId,
+  command: BrowserNavigationCommand,
+): void {
+  if (!chromeWebContents.isDestroyed()) {
+    chromeWebContents.send(NAVIGATION_COMMAND_CHANNEL, tabId, command)
   }
 }
 
@@ -163,19 +172,19 @@ function getUpdateKey(update: PhotonBrowserUpdate): string {
   return "window-maximized"
 }
 
-function getOverlayPageUrl(includePerformanceDiagnostics = false): string {
+function getChromePageUrl(includePerformanceDiagnostics = false): string {
   const rendererUrl = process.env["ELECTRON_RENDERER_URL"]
   if (rendererUrl) {
     const baseUrl = rendererUrl.endsWith("/") ? rendererUrl : rendererUrl + "/"
-    return getOverlayUrl(new URL("overlay.html", baseUrl), includePerformanceDiagnostics)
+    return getChromeUrl(new URL("index.html", baseUrl), includePerformanceDiagnostics)
   }
-  return getOverlayUrl(
-    pathToFileURL(join(__dirname, "../renderer/overlay.html")),
+  return getChromeUrl(
+    pathToFileURL(join(__dirname, "../renderer/index.html")),
     includePerformanceDiagnostics,
   )
 }
 
-function getOverlayUrl(url: URL, includePerformanceDiagnostics: boolean): string {
+function getChromeUrl(url: URL, includePerformanceDiagnostics: boolean): string {
   if (includePerformanceDiagnostics) url.searchParams.set("perf", "1")
   return url.toString()
 }
@@ -185,7 +194,7 @@ void app.whenReady().then(() => {
   void createBrowserWindow()
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) void createBrowserWindow()
+    if (BaseWindow.getAllWindows().length === 0) void createBrowserWindow()
   })
 })
 

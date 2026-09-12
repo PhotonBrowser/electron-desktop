@@ -1,14 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron"
-import {
-  OVERLAY_HIDDEN_CHANNEL,
-  OVERLAY_HIDE_CHANNEL,
-  OVERLAY_SHOW_SITE_SECURITY_CHANNEL,
-  OVERLAY_STATE_CHANNEL,
-  type PhotonOverlayAPI,
-  type PhotonOverlayPreloadAPI,
-  type SiteSecurityOverlayState,
-} from "@/shared/overlay"
 import type {
+  BrowserNavigationCommand,
   BrowserDownload,
   DownloadId,
   MemorySaverSettings,
@@ -16,12 +8,14 @@ import type {
   PhotonAPI,
   PhotonPerformanceMetrics,
   PhotonSnapshot,
+  PhotonWebviewEventChanges,
   TabId,
 } from "./photon-api"
 
 const UPDATES_CHANNEL = "photon:browser-updates"
 const FOCUS_OMNIBOX_CHANNEL = "photon:focus-omnibox"
 const DOWNLOADS_CHANGED_CHANNEL = "photon:downloads-changed"
+const NAVIGATION_COMMAND_CHANNEL = "photon:navigation-command"
 
 const navigation: PhotonAPI["navigation"] = {
   back: () => ipcRenderer.invoke("photon:navigation:back") as Promise<void>,
@@ -36,6 +30,8 @@ const tabs: PhotonAPI["tabs"] = {
   select: (tabId) => ipcRenderer.invoke("photon:tabs:select", tabId) as Promise<void>,
   close: (tabId) => ipcRenderer.invoke("photon:tabs:close", tabId) as Promise<void>,
   reorder: (tabIds) => ipcRenderer.invoke("photon:tabs:reorder", tabIds) as Promise<void>,
+  update: (tabId: TabId, changes: PhotonWebviewEventChanges) =>
+    ipcRenderer.invoke("photon:tabs:update", tabId, changes) as Promise<void>,
 }
 
 const windowAPI: PhotonAPI["window"] = {
@@ -71,34 +67,6 @@ const performanceAPI: PhotonAPI["performance"] = {
     ipcRenderer.invoke("photon:performance:metrics") as Promise<PhotonPerformanceMetrics>,
 }
 
-const overlay: PhotonOverlayAPI = {
-  showSiteSecurity: (bounds, site) =>
-    ipcRenderer.invoke(OVERLAY_SHOW_SITE_SECURITY_CHANNEL, bounds, site) as Promise<void>,
-  hide: () => ipcRenderer.invoke(OVERLAY_HIDE_CHANNEL) as Promise<void>,
-  onHidden: (listener) => {
-    const handleHidden = (): void => listener()
-    ipcRenderer.on(OVERLAY_HIDDEN_CHANNEL, handleHidden)
-    return () => ipcRenderer.off(OVERLAY_HIDDEN_CHANNEL, handleHidden)
-  },
-}
-
-const overlayPreloadAPI: PhotonOverlayPreloadAPI = {
-  hide: overlay.hide,
-  onState: (listener) => {
-    const handleState = (
-      _event: Electron.IpcRendererEvent,
-      state: SiteSecurityOverlayState,
-    ): void => listener(state)
-    ipcRenderer.on(OVERLAY_STATE_CHANNEL, handleState)
-    return () => ipcRenderer.off(OVERLAY_STATE_CHANNEL, handleState)
-  },
-  onHidden: (listener) => {
-    const handleHidden = (): void => listener()
-    ipcRenderer.on(OVERLAY_HIDDEN_CHANNEL, handleHidden)
-    return () => ipcRenderer.off(OVERLAY_HIDDEN_CHANNEL, handleHidden)
-  },
-}
-
 const photonAPI: PhotonAPI = {
   getSnapshot: () => ipcRenderer.invoke("photon:browser:get-snapshot") as Promise<PhotonSnapshot>,
   navigation,
@@ -107,7 +75,6 @@ const photonAPI: PhotonAPI = {
   memorySaver,
   downloads,
   performance: performanceAPI,
-  overlay,
   onUpdates: (listener) => {
     const handleUpdates = (
       _event: Electron.IpcRendererEvent,
@@ -122,7 +89,15 @@ const photonAPI: PhotonAPI = {
     ipcRenderer.on(FOCUS_OMNIBOX_CHANNEL, handleFocus)
     return () => ipcRenderer.off(FOCUS_OMNIBOX_CHANNEL, handleFocus)
   },
+  onNavigationCommand: (listener) => {
+    const handleCommand = (
+      _event: Electron.IpcRendererEvent,
+      tabId: TabId,
+      command: BrowserNavigationCommand,
+    ): void => listener(tabId, command)
+    ipcRenderer.on(NAVIGATION_COMMAND_CHANNEL, handleCommand)
+    return () => ipcRenderer.off(NAVIGATION_COMMAND_CHANNEL, handleCommand)
+  },
 }
 
 contextBridge.exposeInMainWorld("photon", photonAPI)
-contextBridge.exposeInMainWorld("photonOverlay", overlayPreloadAPI)

@@ -18,7 +18,7 @@ export function NewTabPage(): React.JSX.Element {
           <h1>Photon</h1>
         </div>
         <form className="photon-new-tab-form" onSubmit={submit}>
-          <Search aria-hidden="true" className="photon-new-tab-icon" size={21} />
+          <Search aria-hidden="true" className="photon-new-tab-icon z-10" size={21} />
           <Input
             aria-label="Search or enter address"
             autoComplete="off"

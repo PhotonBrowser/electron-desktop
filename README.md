@@ -8,5 +8,5 @@ Custom browser foundation built with Electron, React, TypeScript, Tailwind CSS, 
 - npm run dev
 - npm run check
 
-Electron main owns browser mechanics. React owns browser chrome. Future website
-content will use WebContentsView behind the typed preload boundary.
+Electron main owns browser mechanics. React owns browser chrome, including the
+typed `BrowserView` wrapper around each secure HTML `<webview>` guest.
