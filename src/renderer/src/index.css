@@ -484,6 +484,18 @@ select {
   justify-self: center;
 }
 
+.photon-dropdown-trigger:focus-visible,
+.photon-dropdown-trigger[data-focus-visible="true"],
+.photon-dropdown-popover .menu-item:focus-visible,
+.photon-dropdown-popover .menu-item[data-focus-visible="true"] {
+  --focus: var(--photon-color-border);
+}
+
+.photon-dropdown-popover .menu-item[data-focused="true"] {
+  background-color: var(--photon-color-surface-hover) !important;
+  color: var(--photon-color-text-primary) !important;
+}
+
 .photon-omnibox-form,
 .photon-omnibox-wrap {
   min-width: 0;

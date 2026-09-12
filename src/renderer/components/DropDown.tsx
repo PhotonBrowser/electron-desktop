@@ -44,14 +44,14 @@ export function DropDown({
     <HeroDropdown isOpen={isOpen} onOpenChange={handleOpenChange}>
       <HeroDropdown.Trigger
         aria-label={triggerLabel}
-        className={`button button--icon-only button--sm button--ghost photon-icon-button ${triggerClassName ?? ""}`.trim()}
+        className={`button button--icon-only button--sm button--ghost photon-icon-button photon-dropdown-trigger ${triggerClassName ?? ""}`.trim()}
         type="button"
       >
         {trigger}
       </HeroDropdown.Trigger>
       <HeroDropdown.Popover
         placement={placement}
-        className="z-50 min-w-44 rounded-lg border border-line bg-panel p-1 text-fg shadow-elevated opacity-100 transition-[opacity,transform] duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[entering]:scale-95 data-[entering]:opacity-0 data-[exiting]:scale-95 data-[exiting]:opacity-0"
+        className="photon-dropdown-popover z-50 min-w-44 rounded-lg border border-line bg-panel p-1 text-fg shadow-elevated opacity-100 transition-[opacity,transform] duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[entering]:scale-95 data-[entering]:opacity-0 data-[exiting]:scale-95 data-[exiting]:opacity-0"
       >
         <HeroDropdown.Menu aria-label="Menu">
           {items.map((item) => (
