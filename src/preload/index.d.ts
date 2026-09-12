@@ -1,4 +1,4 @@
-import type { PhotonAPI } from "./photon-api"
+import type { PhotonAPI } from "@/shared/photon-api"
 
 declare global {
   interface Window {

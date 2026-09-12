@@ -2,45 +2,35 @@ import { app, BaseWindow, nativeTheme } from "electron"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 import icon from "@resources/icon.png?asset"
-import type {
-  BrowserNavigationCommand,
-  PhotonBrowserUpdate,
-  PhotonBrowserUpdateEnvelope,
-  PhotonSnapshot,
-  TabId,
-} from "@/preload/photon-api"
+import type { BrowserNavigationCommand, PhotonSnapshot, TabId } from "@/shared/photon-api"
+import { IPC_CHANNELS } from "@/shared/ipc-channels"
 import { TabManager } from "./browser/tab-manager"
 import { createInternalPageRegistry } from "./browser/internal-pages.mts"
 import { WindowComposition } from "./window/window-composition"
-import {
-  registerBrowserIpc,
-  NAVIGATION_COMMAND_CHANNEL,
-  sendBrowserUpdates,
-  sendOmniboxFocus,
-  unregisterBrowserIpc,
-} from "./ipc/browser-ipc"
+import { registerBrowserIpc, sendOmniboxFocus, unregisterBrowserIpc } from "./ipc/browser-ipc"
+import { createBrowserUpdateQueue } from "./ipc/browser-update-queue"
 import { registerBrowserShortcuts } from "./window/browser-shortcuts"
 import { DownloadManager } from "./browser/download-manager.mts"
-import { PHOTON_THEME_COLORS } from "@/shared/theme-colors"
 import { createChromeView, loadChromeView } from "./views/chrome-view"
 import { configureBrowserSession } from "./sessions/browser-session"
 
 async function createBrowserWindow(): Promise<void> {
   const isMac = process.platform === "darwin"
-  const windowBackground = nativeTheme.shouldUseDarkColors
-    ? PHOTON_THEME_COLORS.darkWindowBackground
-    : PHOTON_THEME_COLORS.lightWindowBackground
   const showPerformanceOverlay = !app.isPackaged && process.env["PHOTON_SHOW_PERF_OVERLAY"] === "1"
   const browserWindow = new BaseWindow({
     width: 1100,
     height: 760,
+    minWidth: 640,
+    minHeight: 480,
     show: false,
-    // Keep the chrome edge opaque while the renderer hosts the page-area webview.
-    backgroundColor: windowBackground,
+    transparent: true,
+    backgroundColor: "#00000000",
+    roundedCorners: true,
     autoHideMenuBar: true,
     ...(isMac ? { titleBarStyle: "hiddenInset" as const } : { frame: false }),
     ...(process.platform === "linux" ? { icon } : {}),
   })
+  browserWindow.setBackgroundColor("#00000000")
   const chromeView = createChromeView()
   const composition = new WindowComposition(browserWindow, chromeView)
   const focusOmniboxInChrome = (): void => {
@@ -50,47 +40,14 @@ async function createBrowserWindow(): Promise<void> {
   let tabManager: TabManager | undefined
   const downloadManager = new DownloadManager(chromeView.webContents)
   const internalPages = createInternalPageRegistry(app.getName())
-  let browserRevision = 0
+  const updateQueue = createBrowserUpdateQueue(chromeView.webContents)
   const getSnapshot = (): PhotonSnapshot => {
     if (!tabManager) throw new Error("Photon tab manager is not ready")
     return {
-      revision: browserRevision,
+      revision: updateQueue.getRevision(),
       ...tabManager.getSnapshot(),
       isMaximized: browserWindow.isMaximized(),
     }
-  }
-  const pendingUpdates = new Map<string, PhotonBrowserUpdateEnvelope[]>()
-  let updateFlushTimer: ReturnType<typeof setTimeout> | undefined
-  const emitUpdate = (update: PhotonBrowserUpdate): void => {
-    const envelope = { revision: ++browserRevision, update }
-    const key = getUpdateKey(update)
-    const pendingForKey = pendingUpdates.get(key) ?? []
-    const previous = pendingForKey.at(-1)
-    if (previous?.update.type === "tab-updated" && update.type === "tab-updated") {
-      pendingForKey[pendingForKey.length - 1] = {
-        revision: envelope.revision,
-        update: {
-          type: "tab-updated",
-          tabId: update.tabId,
-          changes: { ...previous.update.changes, ...update.changes },
-        },
-      }
-    } else {
-      pendingForKey.push(envelope)
-    }
-    pendingUpdates.set(key, pendingForKey)
-    if (updateFlushTimer !== undefined) return
-
-    // Main has no animation-frame clock. A short frame-sized window coalesces
-    // bursts of WebContents events before crossing the process boundary.
-    updateFlushTimer = setTimeout(() => {
-      updateFlushTimer = undefined
-      const updates = [...pendingUpdates.values()]
-        .flat()
-        .sort((first, second) => first.revision - second.revision)
-      pendingUpdates.clear()
-      sendBrowserUpdates(chromeView.webContents, updates)
-    }, 16)
   }
   let unregisterShortcuts = (): void => undefined
   let unregisterBrowserSession = (): void => undefined
@@ -102,15 +59,14 @@ async function createBrowserWindow(): Promise<void> {
     composition.dispose()
     unregisterShortcuts()
     unregisterBrowserSession()
-    unregisterBrowserIpc()
+    unregisterBrowserIpc(chromeView.webContents)
     downloadManager.dispose()
-    if (updateFlushTimer !== undefined) clearTimeout(updateFlushTimer)
-    pendingUpdates.clear()
+    updateQueue.dispose()
     tabManager = undefined
   }
 
   tabManager = new TabManager({
-    onChange: emitUpdate,
+    onChange: updateQueue.enqueue,
     onFocusOmnibox: focusOmniboxInChrome,
     onFocusPage: (tabId) => sendNavigationCommand(chromeView.webContents, tabId, "focus"),
     onNavigationCommand: (tabId, command) =>
@@ -128,18 +84,20 @@ async function createBrowserWindow(): Promise<void> {
     tabManager,
     getSnapshot,
     downloadManager,
+    createWindow: () => {
+      void createBrowserWindow()
+    },
   })
   unregisterShortcuts = registerBrowserShortcuts({
-    browserWindow,
     chromeWebContents: chromeView.webContents,
     tabManager,
     focusOmnibox: focusOmniboxInChrome,
   })
   browserWindow.on("maximize", () =>
-    emitUpdate({ type: "window-maximized-changed", isMaximized: true }),
+    updateQueue.enqueue({ type: "window-maximized-changed", isMaximized: true }),
   )
   browserWindow.on("unmaximize", () =>
-    emitUpdate({ type: "window-maximized-changed", isMaximized: false }),
+    updateQueue.enqueue({ type: "window-maximized-changed", isMaximized: false }),
   )
   chromeView.webContents.once("did-finish-load", () => {
     // This is the first point where chrome has painted and the initial native layout is stable.
@@ -159,17 +117,8 @@ function sendNavigationCommand(
   command: BrowserNavigationCommand,
 ): void {
   if (!chromeWebContents.isDestroyed()) {
-    chromeWebContents.send(NAVIGATION_COMMAND_CHANNEL, tabId, command)
+    chromeWebContents.send(IPC_CHANNELS.navigation.command, tabId, command)
   }
-}
-
-function getUpdateKey(update: PhotonBrowserUpdate): string {
-  if (update.type === "tab-added") return `tab:${update.tab.id}`
-  if (update.type === "tab-updated") return `tab:${update.tabId}`
-  if (update.type === "tab-removed") return `tab:${update.tabId}`
-  if (update.type === "tabs-reordered") return "tabs-order"
-  if (update.type === "active-tab-changed") return "active-tab"
-  return "window-maximized"
 }
 
 function getChromePageUrl(includePerformanceDiagnostics = false): string {

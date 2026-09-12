@@ -1,9 +1,10 @@
 import { app, webContents } from "electron"
+import { logger } from "../../shared/logger"
 import type {
   PhotonPerformanceMetrics,
   PhotonProcessMetric,
   PhotonWebContentsMetric,
-} from "@/preload/photon-api"
+} from "@/shared/photon-api"
 import type { TabManager } from "../browser/tab-manager"
 
 /**
@@ -59,7 +60,7 @@ function getWebContentsByPid(): Map<number, PhotonWebContentsMetric[]> {
       processContents.push(metric)
       result.set(contents.getOSProcessId(), processContents)
     } catch {
-      // A WebContents can disappear between enumeration and inspection.
+      continue
     }
   }
   return result
@@ -82,12 +83,12 @@ function toProcessMetric(
 }
 
 function printProcessMetrics(metrics: PhotonPerformanceMetrics): void {
-  console.log("Photon process metrics")
+  logger.debug("process metrics")
   for (const process of metrics.processes) {
     const contents = process.webContents
       .map((webContent) => `wc#${webContent.id} ${webContent.type} ${webContent.url || "<empty>"}`)
       .join(" | ")
-    console.log(
+    logger.debug(
       `${process.pid}\t${process.type}\t${formatMB(process.workingSetBytes)}\t${contents || "-"}`,
     )
   }

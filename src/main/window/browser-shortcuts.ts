@@ -1,4 +1,5 @@
-import type { BaseWindow, Event, Input, WebContents } from "electron"
+import type { Event, Input, WebContents } from "electron"
+import { WEBVIEW_EVENTS } from "../../shared/webview-events.ts"
 import type { TabManager } from "../browser/tab-manager"
 
 export type BrowserShortcut =
@@ -14,9 +15,18 @@ export type BrowserShortcut =
   | "devtools"
 
 interface BrowserShortcutsContext {
-  browserWindow: BaseWindow
-  chromeWebContents?: WebContents
-  tabManager: TabManager
+  chromeWebContents: WebContents
+  tabManager: Pick<
+    TabManager,
+    | "back"
+    | "closeActiveTab"
+    | "createTab"
+    | "forward"
+    | "reload"
+    | "reopenClosedTab"
+    | "selectRelativeTab"
+    | "toggleDevTools"
+  >
   focusOmnibox: () => void
 }
 
@@ -123,16 +133,13 @@ export function registerBrowserShortcuts(context: BrowserShortcutsContext): () =
     attachedWebContents.add(webContents)
   }
 
-  const legacyWindow = context.browserWindow as BaseWindow & { webContents?: WebContents }
-  const chromeWebContents = context.chromeWebContents ?? legacyWindow.webContents
   const handleGuestAttached = (_event: Event, guest: WebContents): void => attach(guest)
-  if (chromeWebContents) {
-    attach(chromeWebContents)
-    chromeWebContents.on("did-attach-webview", handleGuestAttached)
-  }
+  const { chromeWebContents } = context
+  attach(chromeWebContents)
+  chromeWebContents.on(WEBVIEW_EVENTS.didAttach, handleGuestAttached)
 
   return () => {
-    chromeWebContents?.off("did-attach-webview", handleGuestAttached)
+    chromeWebContents.off(WEBVIEW_EVENTS.didAttach, handleGuestAttached)
     for (const webContents of attachedWebContents) {
       webContents.off("before-input-event", handleBeforeInputEvent)
     }

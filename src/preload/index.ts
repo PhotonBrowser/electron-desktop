@@ -10,65 +10,63 @@ import type {
   PhotonSnapshot,
   PhotonWebviewEventChanges,
   TabId,
-} from "./photon-api"
+} from "@/shared/photon-api"
+import { IPC_CHANNELS } from "@/shared/ipc-channels"
 
-const UPDATES_CHANNEL = "photon:browser-updates"
-const FOCUS_OMNIBOX_CHANNEL = "photon:focus-omnibox"
-const DOWNLOADS_CHANGED_CHANNEL = "photon:downloads-changed"
-const NAVIGATION_COMMAND_CHANNEL = "photon:navigation-command"
+function invoke<TResult>(channel: string, ...args: readonly unknown[]): Promise<TResult> {
+  return ipcRenderer.invoke(channel, ...args) as Promise<TResult>
+}
 
 const navigation: PhotonAPI["navigation"] = {
-  back: () => ipcRenderer.invoke("photon:navigation:back") as Promise<void>,
-  forward: () => ipcRenderer.invoke("photon:navigation:forward") as Promise<void>,
-  reload: () => ipcRenderer.invoke("photon:navigation:reload") as Promise<void>,
-  stop: () => ipcRenderer.invoke("photon:navigation:stop") as Promise<void>,
-  navigate: (url) => ipcRenderer.invoke("photon:navigation:navigate", url) as Promise<void>,
+  back: () => invoke<void>(IPC_CHANNELS.navigation.back),
+  forward: () => invoke<void>(IPC_CHANNELS.navigation.forward),
+  reload: () => invoke<void>(IPC_CHANNELS.navigation.reload),
+  stop: () => invoke<void>(IPC_CHANNELS.navigation.stop),
+  navigate: (url) => invoke<void>(IPC_CHANNELS.navigation.navigate, url),
 }
 
 const tabs: PhotonAPI["tabs"] = {
-  create: () => ipcRenderer.invoke("photon:tabs:create") as Promise<TabId>,
-  select: (tabId) => ipcRenderer.invoke("photon:tabs:select", tabId) as Promise<void>,
-  close: (tabId) => ipcRenderer.invoke("photon:tabs:close", tabId) as Promise<void>,
-  reorder: (tabIds) => ipcRenderer.invoke("photon:tabs:reorder", tabIds) as Promise<void>,
+  create: () => invoke<TabId>(IPC_CHANNELS.tabs.create),
+  select: (tabId) => invoke<void>(IPC_CHANNELS.tabs.select, tabId),
+  close: (tabId) => invoke<void>(IPC_CHANNELS.tabs.close, tabId),
+  reorder: (tabIds) => invoke<void>(IPC_CHANNELS.tabs.reorder, tabIds),
   update: (tabId: TabId, changes: PhotonWebviewEventChanges) =>
-    ipcRenderer.invoke("photon:tabs:update", tabId, changes) as Promise<void>,
+    invoke<void>(IPC_CHANNELS.tabs.update, tabId, changes),
 }
 
 const windowAPI: PhotonAPI["window"] = {
-  minimize: () => ipcRenderer.invoke("photon:window:minimize") as Promise<void>,
-  toggleMaximize: () => ipcRenderer.invoke("photon:window:toggle-maximize") as Promise<void>,
-  close: () => ipcRenderer.invoke("photon:window:close") as Promise<void>,
+  minimize: () => invoke<void>(IPC_CHANNELS.window.minimize),
+  toggleMaximize: () => invoke<void>(IPC_CHANNELS.window.toggleMaximize),
+  close: () => invoke<void>(IPC_CHANNELS.window.close),
+  newWindow: () => invoke<void>(IPC_CHANNELS.window.newWindow),
 }
 
 const memorySaver: PhotonAPI["memorySaver"] = {
   setSettings: (settings: MemorySaverSettings) =>
-    ipcRenderer.invoke("photon:memory-saver:set-settings", settings) as Promise<void>,
+    invoke<void>(IPC_CHANNELS.memorySaver.setSettings, settings),
 }
 
 const downloads: PhotonAPI["downloads"] = {
-  getSnapshot: () =>
-    ipcRenderer.invoke("photon:downloads:get-snapshot") as Promise<BrowserDownload[]>,
-  cancel: (id: DownloadId) => ipcRenderer.invoke("photon:downloads:cancel", id) as Promise<void>,
-  pause: (id: DownloadId) => ipcRenderer.invoke("photon:downloads:pause", id) as Promise<void>,
-  resume: (id: DownloadId) => ipcRenderer.invoke("photon:downloads:resume", id) as Promise<void>,
-  open: (id: DownloadId) => ipcRenderer.invoke("photon:downloads:open", id) as Promise<void>,
-  showInFolder: (id: DownloadId) =>
-    ipcRenderer.invoke("photon:downloads:showInFolder", id) as Promise<void>,
+  getSnapshot: () => invoke<BrowserDownload[]>(IPC_CHANNELS.downloads.getSnapshot),
+  cancel: (id: DownloadId) => invoke<void>(IPC_CHANNELS.downloads.cancel, id),
+  pause: (id: DownloadId) => invoke<void>(IPC_CHANNELS.downloads.pause, id),
+  resume: (id: DownloadId) => invoke<void>(IPC_CHANNELS.downloads.resume, id),
+  open: (id: DownloadId) => invoke<void>(IPC_CHANNELS.downloads.open, id),
+  showInFolder: (id: DownloadId) => invoke<void>(IPC_CHANNELS.downloads.showInFolder, id),
   onChanged: (listener) => {
     const handleChanged = (_event: Electron.IpcRendererEvent, next: BrowserDownload[]): void =>
       listener(next)
-    ipcRenderer.on(DOWNLOADS_CHANGED_CHANNEL, handleChanged)
-    return () => ipcRenderer.off(DOWNLOADS_CHANGED_CHANNEL, handleChanged)
+    ipcRenderer.on(IPC_CHANNELS.downloads.changed, handleChanged)
+    return () => ipcRenderer.off(IPC_CHANNELS.downloads.changed, handleChanged)
   },
 }
 
 const performanceAPI: PhotonAPI["performance"] = {
-  getMetrics: () =>
-    ipcRenderer.invoke("photon:performance:metrics") as Promise<PhotonPerformanceMetrics>,
+  getMetrics: () => invoke<PhotonPerformanceMetrics>(IPC_CHANNELS.performance.metrics),
 }
 
 const photonAPI: PhotonAPI = {
-  getSnapshot: () => ipcRenderer.invoke("photon:browser:get-snapshot") as Promise<PhotonSnapshot>,
+  getSnapshot: () => invoke<PhotonSnapshot>(IPC_CHANNELS.browser.getSnapshot),
   navigation,
   tabs,
   window: windowAPI,
@@ -81,13 +79,13 @@ const photonAPI: PhotonAPI = {
       updates: PhotonBrowserUpdateEnvelope[],
     ): void => listener(updates)
 
-    ipcRenderer.on(UPDATES_CHANNEL, handleUpdates)
-    return () => ipcRenderer.off(UPDATES_CHANNEL, handleUpdates)
+    ipcRenderer.on(IPC_CHANNELS.browser.updates, handleUpdates)
+    return () => ipcRenderer.off(IPC_CHANNELS.browser.updates, handleUpdates)
   },
   onFocusOmnibox: (listener) => {
     const handleFocus = (): void => listener()
-    ipcRenderer.on(FOCUS_OMNIBOX_CHANNEL, handleFocus)
-    return () => ipcRenderer.off(FOCUS_OMNIBOX_CHANNEL, handleFocus)
+    ipcRenderer.on(IPC_CHANNELS.focusOmnibox, handleFocus)
+    return () => ipcRenderer.off(IPC_CHANNELS.focusOmnibox, handleFocus)
   },
   onNavigationCommand: (listener) => {
     const handleCommand = (
@@ -95,8 +93,8 @@ const photonAPI: PhotonAPI = {
       tabId: TabId,
       command: BrowserNavigationCommand,
     ): void => listener(tabId, command)
-    ipcRenderer.on(NAVIGATION_COMMAND_CHANNEL, handleCommand)
-    return () => ipcRenderer.off(NAVIGATION_COMMAND_CHANNEL, handleCommand)
+    ipcRenderer.on(IPC_CHANNELS.navigation.command, handleCommand)
+    return () => ipcRenderer.off(IPC_CHANNELS.navigation.command, handleCommand)
   },
 }
 

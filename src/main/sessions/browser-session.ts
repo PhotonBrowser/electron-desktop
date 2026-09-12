@@ -5,9 +5,20 @@ import {
   type WebContentsWillNavigateEventParams,
   type WebPreferences,
 } from "electron"
-import type { TabId } from "@/preload/photon-api"
+import type { TabId } from "@/shared/photon-api"
+import { WEBVIEW_EVENTS } from "@/shared/webview-events"
 
 type CreateTab = (url: string) => TabId
+let configuredSessionCount = 0
+
+const denyPermissionCheck = (): boolean => false
+const denyPermissionRequest = (
+  _webContents: WebContents,
+  _permission: string,
+  callback: (allowed: boolean) => void,
+): void => {
+  callback(false)
+}
 
 /**
  * Applies the security and guest-window policy shared by every Photon webview.
@@ -44,29 +55,29 @@ export function configureBrowserSession(
       if (isWebUrl(details.url)) createTab(details.url)
       return { action: "deny" }
     })
-    guest.on("will-navigate", handleWillNavigate)
-    guest.once("destroyed", () => guest.off("will-navigate", handleWillNavigate))
+    guest.on(WEBVIEW_EVENTS.willNavigate, handleWillNavigate)
+    guest.once("destroyed", () => guest.off(WEBVIEW_EVENTS.willNavigate, handleWillNavigate))
   }
 
-  const denyPermissionCheck = (): boolean => false
-  const denyPermissionRequest = (
-    _webContents: WebContents,
-    _permission: string,
-    callback: (allowed: boolean) => void,
-  ): void => {
-    callback(false)
+  chromeWebContents.on(WEBVIEW_EVENTS.willAttach, handleWillAttachWebview)
+  chromeWebContents.on(WEBVIEW_EVENTS.didAttach, handleDidAttachWebview)
+  if (configuredSessionCount === 0) {
+    session.defaultSession.setPermissionCheckHandler(denyPermissionCheck)
+    session.defaultSession.setPermissionRequestHandler(denyPermissionRequest)
   }
-
-  chromeWebContents.on("will-attach-webview", handleWillAttachWebview)
-  chromeWebContents.on("did-attach-webview", handleDidAttachWebview)
-  session.defaultSession.setPermissionCheckHandler(denyPermissionCheck)
-  session.defaultSession.setPermissionRequestHandler(denyPermissionRequest)
+  configuredSessionCount += 1
+  let disposed = false
 
   return () => {
-    chromeWebContents.off("will-attach-webview", handleWillAttachWebview)
-    chromeWebContents.off("did-attach-webview", handleDidAttachWebview)
-    session.defaultSession.setPermissionCheckHandler(null)
-    session.defaultSession.setPermissionRequestHandler(null)
+    if (disposed) return
+    disposed = true
+    chromeWebContents.off(WEBVIEW_EVENTS.willAttach, handleWillAttachWebview)
+    chromeWebContents.off(WEBVIEW_EVENTS.didAttach, handleDidAttachWebview)
+    configuredSessionCount -= 1
+    if (configuredSessionCount === 0) {
+      session.defaultSession.setPermissionCheckHandler(null)
+      session.defaultSession.setPermissionRequestHandler(null)
+    }
   }
 }
 

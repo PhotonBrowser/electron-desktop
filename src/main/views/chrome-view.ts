@@ -1,8 +1,9 @@
 import { WebContentsView } from "electron"
 import { join } from "node:path"
+import { logger } from "../../shared/logger"
 
 export function createChromeView(): WebContentsView {
-  return new WebContentsView({
+  const view = new WebContentsView({
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       webviewTag: true,
@@ -12,12 +13,14 @@ export function createChromeView(): WebContentsView {
       backgroundThrottling: false,
     },
   })
+  view.setBackgroundColor("#00000000")
+  return view
 }
 
 export function loadChromeView(view: WebContentsView, url: string): void {
   void view.webContents.loadURL(url).catch((error: unknown) => {
     if (process.env.NODE_ENV !== "production") {
-      console.error(
+      logger.error(
         "Photon chrome failed to load: " +
           (error instanceof Error ? error.message : "Unknown error"),
       )
