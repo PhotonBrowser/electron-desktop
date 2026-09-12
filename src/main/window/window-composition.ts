@@ -10,6 +10,7 @@ export class WindowComposition {
   private readonly chromeView: WebContentsView
   private readonly handleWindowResize = (): void => this.updateChromeBounds()
   private initialized = false
+  private disposed = false
 
   constructor(browserWindow: BaseWindow, chromeView: WebContentsView) {
     this.browserWindow = browserWindow
@@ -35,12 +36,16 @@ export class WindowComposition {
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
     this.browserWindow.off("resize", this.handleWindowResize)
     this.browserWindow.off("maximize", this.handleWindowResize)
     this.browserWindow.off("unmaximize", this.handleWindowResize)
     this.browserWindow.off("enter-full-screen", this.handleWindowResize)
     this.browserWindow.off("leave-full-screen", this.handleWindowResize)
-    this.browserWindow.contentView.removeChildView(this.chromeView)
+    if (!this.browserWindow.isDestroyed()) {
+      this.browserWindow.contentView.removeChildView(this.chromeView)
+    }
     if (!this.chromeView.webContents.isDestroyed()) this.chromeView.webContents.close()
   }
 
