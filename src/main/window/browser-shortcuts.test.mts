@@ -24,9 +24,20 @@ function input(
 
 test("resolves browser shortcuts with exact modifiers", () => {
   assert.equal(resolveBrowserShortcut(input({ key: "L" })), "focus-omnibox")
+  assert.equal(resolveBrowserShortcut(input({ key: "T" })), "new-tab")
+  assert.equal(resolveBrowserShortcut(input({ key: "W" })), "close-tab")
+  assert.equal(resolveBrowserShortcut(input({ key: "R" })), "reload")
   assert.equal(resolveBrowserShortcut(input({ key: "Tab" })), "next-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "Tab", shift: true })), "previous-tab")
   assert.equal(resolveBrowserShortcut(input({ key: "T", shift: true })), "reopen-tab")
+  assert.equal(
+    resolveBrowserShortcut(input({ key: "ArrowLeft", control: false, alt: true })),
+    "back",
+  )
+  assert.equal(
+    resolveBrowserShortcut(input({ key: "ArrowRight", control: false, alt: true })),
+    "forward",
+  )
   assert.equal(resolveBrowserShortcut(input({ key: "r", shift: true })), undefined)
   assert.equal(resolveBrowserShortcut(input({ key: "f" })), undefined)
   assert.equal(resolveBrowserShortcut(input({ type: "char" })), undefined)
@@ -63,6 +74,9 @@ test("attaches shortcuts to webview guests created after registration", () => {
   const event = { preventDefault: () => undefined }
   guest.emit("before-input-event", event, input())
 
+  assert.equal(focusedOmnibox, 1)
+  guest.emit("destroyed")
+  guest.emit("before-input-event", event, input())
   assert.equal(focusedOmnibox, 1)
   unregister()
   guest.emit("before-input-event", event, input())
