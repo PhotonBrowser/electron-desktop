@@ -64,7 +64,7 @@ export function DropDown({
                 if (controlledOpen === undefined) setUncontrolledOpen(false)
               }}
               className={[
-                "flex min-h-8 items-center gap-2 rounded px-2 text-sm outline-none",
+                "photon-dropdown-item flex items-center outline-none",
                 "data-[focused]:bg-default data-[focused]:text-default-foreground",
                 item.separator ? "mt-1 border-t border-line pt-1" : "",
               ].join(" ")}

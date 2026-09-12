@@ -43,6 +43,7 @@ body,
   --photon-space-4: 16px;
   --photon-space-5: 20px;
   --photon-space-6: 24px;
+  --photon-space-7: 28px;
   --photon-space-8: 32px;
   --photon-motion-micro: 80ms;
   --photon-motion-quick: 150ms;
@@ -54,6 +55,23 @@ body,
   --photon-chrome-padding: var(--photon-space-2);
   --photon-chrome-gap: var(--photon-space-1);
   --photon-window-inset: var(--photon-space-1);
+  --photon-control-size: 28px;
+  --photon-field-height: 34px;
+  --photon-search-field-height: 46px;
+  --photon-tab-height: 32px;
+  --photon-tab-icon-size: 14px;
+  --photon-tab-close-size: 22px;
+  --photon-tab-min-width: 120px;
+  --photon-tab-preferred-width: 240px;
+  --photon-content-gutter: var(--photon-space-6);
+  --photon-content-max-width: 640px;
+  --photon-new-tab-max-width: 560px;
+  --photon-popover-padding: var(--photon-space-1);
+  --photon-menu-min-width: 176px;
+  --photon-popover-row-height: calc(var(--photon-space-7) * 2);
+  --photon-field-content-height: calc(var(--photon-field-height) - 2px);
+  --photon-theme-control-width: 120px;
+  --photon-site-popover-width: 320px;
   --photon-radius-control: 8px;
   --photon-radius-field: 10px;
   --photon-radius-panel: 16px;
@@ -175,7 +193,7 @@ select {
   align-items: center;
   min-width: 0;
   padding-block: 0;
-  padding-inline: 2px;
+  padding-inline: var(--photon-window-inset);
   background: var(--photon-color-canvas);
   overflow: hidden;
   -webkit-app-region: drag;
@@ -209,7 +227,7 @@ select {
   flex: 0 1 auto;
   min-width: 0;
   width: max-content;
-  max-width: 100%;
+  max-width: calc(100% - var(--photon-control-size) - var(--photon-chrome-gap));
   height: 100%;
   align-items: center;
   gap: var(--photon-chrome-gap);
@@ -220,10 +238,10 @@ select {
 .photon-tab-layout {
   position: relative;
   min-width: 0;
-  width: 240px;
-  min-width: 120px;
-  max-width: 240px;
-  flex: 0 1 240px;
+  width: var(--photon-tab-preferred-width);
+  min-width: var(--photon-tab-min-width);
+  max-width: var(--photon-tab-preferred-width);
+  flex: 1 1 var(--photon-tab-preferred-width);
   cursor: grab;
   user-select: none;
   transition:
@@ -244,12 +262,12 @@ select {
   display: flex;
   position: relative;
   width: 100%;
-  height: 32px;
+  height: var(--photon-tab-height);
   min-width: 0;
   align-items: center;
   gap: var(--photon-chrome-gap);
   overflow: hidden;
-  padding: 0 8px;
+  padding-inline: var(--photon-space-2);
   border: 1px solid transparent;
   border-radius: var(--photon-radius-control);
   color: var(--photon-color-text-secondary);
@@ -316,13 +334,13 @@ select {
 .photon-tab-icon {
   position: relative;
   display: grid;
-  flex: 0 0 14px;
+  flex: 0 0 var(--photon-tab-icon-size);
   place-items: center;
 }
 
 .photon-tab-icon img {
   display: block;
-  border-radius: calc(var(--photon-radius-control) / 2);
+  border-radius: var(--photon-space-1);
 }
 
 .photon-tab-favicon {
@@ -340,9 +358,9 @@ select {
 
 .photon-tab-close {
   display: grid;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
+  flex: 0 0 var(--photon-tab-close-size);
+  width: var(--photon-tab-close-size);
+  height: var(--photon-tab-close-size);
   place-items: center;
   border: 0;
   border-radius: var(--photon-radius-control);
@@ -369,9 +387,9 @@ select {
 }
 
 .photon-new-tab {
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
+  width: var(--photon-control-size);
+  min-width: var(--photon-control-size);
+  height: var(--photon-control-size);
   flex: 0 0 auto;
   border-radius: var(--photon-radius-control) !important;
   background: transparent !important;
@@ -405,8 +423,9 @@ select {
 
 .photon-window-control {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: var(--photon-control-size);
+  min-width: var(--photon-control-size);
+  height: var(--photon-control-size);
   place-items: center;
   border: 0;
   border-radius: var(--photon-radius-control);
@@ -445,6 +464,13 @@ select {
 }
 
 .photon-toolbar-button {
+  display: grid;
+  width: var(--photon-control-size);
+  min-width: var(--photon-control-size) !important;
+  height: var(--photon-control-size);
+  min-height: var(--photon-control-size);
+  padding: 0;
+  place-items: center;
   background: transparent !important;
   border-radius: var(--photon-radius-control);
   color: var(--photon-color-text-primary);
@@ -494,6 +520,20 @@ select {
   color: var(--photon-color-text-primary) !important;
 }
 
+.photon-dropdown-popover {
+  min-width: var(--photon-menu-min-width);
+  padding: var(--photon-popover-padding);
+  border-radius: var(--photon-radius-control);
+}
+
+.photon-dropdown-item {
+  min-height: var(--photon-field-height);
+  gap: var(--photon-space-2);
+  padding-inline: var(--photon-space-2);
+  border-radius: var(--photon-space-1);
+  font-size: 13px;
+}
+
 .photon-omnibox-form,
 .photon-omnibox-wrap {
   min-width: 0;
@@ -506,8 +546,8 @@ select {
 
 .photon-address-input {
   width: 100%;
-  height: 34px;
-  padding-left: 42px;
+  height: var(--photon-field-height);
+  padding-inline-start: 42px;
   border: 1px solid transparent;
   border-radius: var(--photon-radius-field);
   background: var(--photon-color-surface) !important;
@@ -531,10 +571,10 @@ select {
 .photon-address-icon-button {
   position: absolute;
   top: 1px;
-  left: 4px;
-  width: 32px !important;
-  min-width: 32px !important;
-  height: 32px !important;
+  inset-inline-start: var(--photon-space-1);
+  width: var(--photon-field-content-height) !important;
+  min-width: var(--photon-field-content-height) !important;
+  height: var(--photon-field-content-height) !important;
   border-radius: var(--photon-radius-control) !important;
   color: var(--photon-color-text-primary);
 }
@@ -555,9 +595,9 @@ select {
 
 .photon-site-security-popover {
   position: fixed;
-  width: 320px;
+  width: min(var(--photon-site-popover-width), calc(100vw - (var(--photon-space-4) * 2)));
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--photon-radius-panel);
   background: var(--photon-color-surface);
   color: var(--photon-color-text-primary);
   box-shadow:
@@ -568,11 +608,11 @@ select {
 
 .photon-site-security-header {
   display: flex;
-  min-height: 58px;
+  min-height: var(--photon-popover-row-height);
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 12px 10px 20px;
+  gap: var(--photon-space-3);
+  padding: var(--photon-space-3) var(--photon-space-4);
 }
 
 .photon-site-security-header strong {
@@ -587,9 +627,9 @@ select {
 
 .photon-site-security-close {
   display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: var(--photon-control-size);
+  height: var(--photon-control-size);
+  flex: 0 0 var(--photon-control-size);
   place-items: center;
   border: 0;
   border-radius: 8px;
@@ -610,10 +650,10 @@ select {
 
 .photon-site-security-row {
   display: flex;
-  min-height: 58px;
+  min-height: var(--photon-popover-row-height);
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
+  gap: var(--photon-space-3);
+  padding-inline: var(--photon-space-4);
   font-size: 16px;
 }
 
@@ -709,8 +749,8 @@ select {
   z-index: 20;
   display: grid;
   place-content: center;
-  gap: 8px;
-  padding: 24px;
+  gap: var(--photon-space-2);
+  padding: var(--photon-space-6);
   background: var(--photon-color-canvas);
   color: var(--photon-color-text-primary);
   text-align: center;
@@ -723,8 +763,8 @@ select {
 
 .browser-error-state button {
   justify-self: center;
-  min-height: 32px;
-  padding: 0 12px;
+  min-height: var(--photon-field-height);
+  padding-inline: var(--photon-space-3);
   border: 1px solid var(--photon-color-border);
   border-radius: var(--photon-radius-control);
   background: var(--photon-color-surface);
@@ -735,11 +775,11 @@ select {
 .perf-overlay {
   position: fixed;
   top: 40px;
-  right: 8px;
+  inset-inline-end: var(--photon-space-2);
   max-height: calc(100% - 48px);
   overflow: auto;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: var(--photon-space-1) var(--photon-space-2);
+  border-radius: var(--photon-space-1);
   background: rgb(0 0 0 / 60%);
   color: #ccc;
   font-family: monospace;
@@ -766,7 +806,7 @@ select {
 
 .photon-new-tab-content {
   display: grid;
-  width: min(560px, calc(100% - 40px));
+  width: min(var(--photon-new-tab-max-width), calc(100% - (var(--photon-content-gutter) * 2)));
   gap: var(--photon-space-6);
   justify-items: center;
   transform: translateY(-8vh);
@@ -775,7 +815,7 @@ select {
 .photon-new-tab-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--photon-space-2);
 }
 
 .photon-new-tab-logo {
@@ -808,8 +848,8 @@ select {
 
 .photon-new-tab-form input {
   width: 100%;
-  height: 46px;
-  padding-left: 48px;
+  height: var(--photon-search-field-height);
+  padding-inline-start: 48px;
   border: 1px solid var(--photon-color-border);
   border-radius: var(--photon-radius-field);
   background: var(--photon-color-surface) !important;
@@ -836,9 +876,9 @@ select {
 }
 
 .photon-settings-content {
-  width: min(640px, calc(100% - (var(--photon-space-6) * 2)));
+  width: min(var(--photon-content-max-width), calc(100% - (var(--photon-content-gutter) * 2)));
   margin: 0 auto;
-  padding-block: var(--photon-space-8) 64px;
+  padding-block: var(--photon-space-8) calc(var(--photon-space-8) * 2);
   color: var(--photon-color-text-primary);
   animation: photon-content-enter var(--photon-motion-enter) var(--photon-motion-ease) both;
 }
@@ -877,7 +917,7 @@ select {
 
 .photon-settings-group {
   display: grid;
-  gap: var(--photon-space-5);
+  gap: var(--photon-space-6);
   padding: var(--photon-space-6);
 }
 
@@ -1032,7 +1072,7 @@ select {
 .photon-memory-option-copy {
   display: grid;
   min-width: 0;
-  gap: 2px;
+  gap: var(--photon-space-1);
   font-size: 13px;
   line-height: 1.35;
 }
@@ -1047,14 +1087,14 @@ select {
 
 .photon-theme-select {
   flex: 0 0 auto;
-  min-width: 116px;
+  min-width: var(--photon-theme-control-width);
 }
 
 .photon-theme-trigger {
-  min-width: 116px;
-  min-height: 32px;
-  height: 32px;
-  padding: 0 var(--photon-space-8) 0 var(--photon-space-3);
+  min-width: var(--photon-theme-control-width);
+  min-height: var(--photon-field-height);
+  height: var(--photon-field-height);
+  padding-inline: var(--photon-space-3) var(--photon-space-8);
   border-radius: var(--photon-radius-control);
   border-color: var(--photon-color-border);
   background: var(--photon-color-canvas) !important;
@@ -1072,7 +1112,22 @@ select {
 }
 
 .photon-theme-popover {
+  min-width: var(--photon-theme-control-width);
+  padding: var(--photon-popover-padding);
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-control);
   background: var(--photon-color-surface) !important;
+  color: var(--photon-color-text-primary);
+}
+
+.photon-theme-popover .menu-item {
+  min-height: var(--photon-field-height);
+  padding-inline: var(--photon-space-2);
+  border-radius: var(--photon-space-1);
+}
+
+.photon-theme-popover .menu-item[data-focused="true"] {
+  background: var(--photon-color-surface-hover);
   color: var(--photon-color-text-primary);
 }
 
@@ -1146,9 +1201,13 @@ select {
 }
 
 @media (max-width: 560px) {
+  :root {
+    --photon-content-gutter: var(--photon-space-4);
+  }
+
   .photon-settings-content {
     width: 100%;
-    padding: var(--photon-space-6) var(--photon-space-4) 48px;
+    padding: var(--photon-space-6) var(--photon-content-gutter) var(--photon-space-8);
   }
 
   .photon-settings-group {
