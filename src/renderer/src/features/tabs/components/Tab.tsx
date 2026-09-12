@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo, useState } from "react"
 import { Asterisk, BedDouble, Globe2, LoaderCircle, X } from "lucide-react"
 import { BROWSER_DEFAULTS } from "@/shared/browser-constants"
 import type { BrowserTab } from "@/shared/photon-api"
@@ -38,22 +38,7 @@ export const Tab = memo(
             ) : tab.kind === "internal" ? (
               <Asterisk aria-label="Photon" size={12} />
             ) : (
-              <>
-                <Globe2 aria-hidden="true" size={12} />
-                {tab.faviconUrl && (
-                  <img
-                    key={tab.faviconUrl}
-                    alt=""
-                    className="photon-tab-favicon"
-                    height={12}
-                    src={tab.faviconUrl}
-                    width={12}
-                    onError={(event) => {
-                      event.currentTarget.hidden = true
-                    }}
-                  />
-                )}
-              </>
+              <WebTabIcon key={`${tab.url}:${tab.faviconUrl ?? ""}`} faviconUrl={tab.faviconUrl} />
             )}
           </span>
           <span className="photon-tab-title">{tab.title || BROWSER_DEFAULTS.newTabTitle}</span>
@@ -77,3 +62,20 @@ export const Tab = memo(
   },
   (previous, next) => areTabPropsEqual(previous.tab, next.tab),
 )
+
+function WebTabIcon({ faviconUrl }: { faviconUrl: string | undefined }): React.JSX.Element {
+  const [failed, setFailed] = useState(false)
+
+  if (!faviconUrl || failed) return <Globe2 aria-hidden="true" size={12} />
+
+  return (
+    <img
+      alt=""
+      className="photon-tab-favicon"
+      height={12}
+      src={faviconUrl}
+      width={12}
+      onError={() => setFailed(true)}
+    />
+  )
+}

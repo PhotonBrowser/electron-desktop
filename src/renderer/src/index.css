@@ -326,9 +326,7 @@ select {
 }
 
 .photon-tab-favicon {
-  position: absolute;
-  inset: 0;
-  background: var(--photon-color-surface);
+  display: block;
 }
 
 .photon-tab-title {
