@@ -46,6 +46,9 @@ Photon is a custom browser built with Electron.
 - `src/main/window/window-composition.ts` is the only owner of the
   BrowserWindow child-view hierarchy and chrome bounds.
 - `src/main/window/browser-shortcuts.ts` owns main-process shortcut routing.
+- `src/main/sessions/browser-session.ts` owns guest security and new-window
+  routing. Allowed HTTP(S) popup requests become Photon tabs; all other popup
+  requests are denied.
 - `src/main/views/chrome-view.ts` creates the privileged chrome renderer with
   `contextIsolation`, `sandbox`, `nodeIntegration: false`, and `webviewTag`.
 - `src/preload/` exposes the narrow typed `window.photon` API and no Node API.
@@ -89,7 +92,8 @@ Photon is a custom browser built with Electron.
 
 - Browser-global shortcuts are registered once against chrome and each guest
   web contents as it attaches. The registration deduplicates guests and always
-  removes both guest and chrome listeners during cleanup.
+  removes both guest and chrome listeners during cleanup. Destroyed guests are
+  removed from the tracking set immediately.
 - Shortcut matching uses exact modifier sets. Browser commands include
   `Ctrl/Cmd+L`, tab creation/closing/reopening, reload, tab cycling,
   `Alt+Left/Right`, and development tools. `Ctrl/Cmd+F` remains a normal page
@@ -97,6 +101,10 @@ Photon is a custom browser built with Electron.
 - `BrowserView` is keyed by stable `tab.id` and memoized against unchanged tab
   records. Inactive webviews remain mounted and hidden; only the explicit
   memory-saver frozen state unmounts them.
+- `BrowserView` pins the initial `src` to the guest's mount. Existing web tabs
+  navigate through the typed main-to-renderer command channel, so URL updates
+  never reset `src` or recreate a guest. Popup opt-in is set before `src` so
+  Electron can deliver `setWindowOpenHandler` requests to the main process.
 - `useWebviewEvents` owns the complete DOM webview listener lifecycle. Every
   event listener and preload subscription has a matching cleanup, and
   `useBrowserSync` batches updates with `requestAnimationFrame` while cancelling
@@ -109,6 +117,10 @@ Photon is a custom browser built with Electron.
 - Renderer store reducer logic lives in `browser-store-state.ts`; persistence
   is limited to validated browser preferences and tab snapshots remain main-
   process authoritative.
+- `TabManager` is authoritative for active tab identity, tab order, lifecycle,
+  closed-tab URL/title reopening, and browser navigation commands. Chromium
+  remains authoritative for webview history; navigation events synchronize URL,
+  title, favicon, loading, crash/error, and back/forward state back to the tab.
 
 ## Webview and window-corner rules
 
