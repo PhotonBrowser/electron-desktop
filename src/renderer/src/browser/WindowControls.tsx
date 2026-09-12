@@ -32,7 +32,7 @@ export function WindowControls(): React.JSX.Element | null {
       </IconButton>
       <IconButton
         ariaLabel="Close window"
-        className="photon-window-control photon-window-control-close"
+        className="photon-window-control"
         size="sm"
         variant="ghost"
         onPress={() => void window.photon.window.close()}
