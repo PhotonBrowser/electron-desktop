@@ -13,6 +13,7 @@ import { usePhotonTheme } from "./hooks/usePhotonTheme"
 import { FindBar } from "../features/find/components/FindBar"
 import type { FindController } from "../features/find/find.types"
 import type { TabId } from "@/shared/photon-api"
+import { useDownloads } from "../features/downloads/hooks/useDownloads"
 
 function App(): React.JSX.Element {
   const addressInput = useRef<HTMLInputElement>(null)
@@ -22,6 +23,7 @@ function App(): React.JSX.Element {
   const themeMode = useBrowserStore((state) => state.themeMode)
   const memorySaverEnabled = useBrowserStore((state) => state.memorySaverEnabled)
   const memorySaverLevel = useBrowserStore((state) => state.memorySaverLevel)
+  const downloads = useDownloads()
   const [findController, setFindController] = useState<FindController | null>(null)
   const setActiveFindController = useCallback((next: FindController | null, tabId: TabId): void => {
     setFindController((current) => {
@@ -38,7 +40,7 @@ function App(): React.JSX.Element {
     <div className="photon-shell">
       <section className="photon-chrome">
         <Titlebar />
-        <Toolbar addressInput={addressInput} />
+        <Toolbar addressInput={addressInput} downloads={downloads} />
       </section>
       <main className="photon-page-area">
         <div className="photon-page-surface">

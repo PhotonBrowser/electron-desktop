@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
-    "test": "node --experimental-strip-types --test src/main/browser/*.test.mts src/main/ipc/*.test.mts src/main/window/*.test.mts src/renderer/src/stores/*.test.mts src/renderer/src/features/find/*.test.mts src/shared/*.test.mts",
+    "test": "node --experimental-strip-types --test src/main/browser/*.test.mts src/main/ipc/*.test.mts src/main/window/*.test.mts src/renderer/src/stores/*.test.mts src/renderer/src/features/find/*.test.mts src/renderer/src/features/downloads/*.test.mts src/shared/*.test.mts",
     "lint:fix": "eslint . --fix",
     "test:navigation": "node --experimental-strip-types --test src/main/browser/navigation-url.test.mts",
     "test:internal-pages": "node --experimental-strip-types --test src/main/browser/internal-pages.test.mts",
