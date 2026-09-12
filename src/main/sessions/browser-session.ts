@@ -8,7 +8,7 @@ import {
 import type { TabId } from "@/shared/photon-api"
 import { WEBVIEW_EVENTS } from "@/shared/webview-events"
 
-type CreateTab = (url: string) => TabId
+type CreateTab = (url: string, focusOmnibox: boolean) => TabId
 let configuredSessionCount = 0
 
 const denyPermissionCheck = (): boolean => false
@@ -52,7 +52,7 @@ export function configureBrowserSession(
       if (!isWebUrl(details.url)) details.preventDefault()
     }
     guest.setWindowOpenHandler((details) => {
-      if (isWebUrl(details.url)) createTab(details.url)
+      if (isWebUrl(details.url)) createTab(details.url, false)
       return { action: "deny" }
     })
     guest.on(WEBVIEW_EVENTS.willNavigate, handleWillNavigate)

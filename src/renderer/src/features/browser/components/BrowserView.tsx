@@ -1,5 +1,5 @@
 import type { WebviewTag } from "electron"
-import { memo, useRef, type CSSProperties } from "react"
+import { memo, useCallback, useRef, type CSSProperties } from "react"
 import type { BrowserTab } from "@/shared/photon-api"
 import { useWebviewEvents } from "../hooks/useWebviewEvents"
 
@@ -14,6 +14,16 @@ export const BrowserView = memo(function BrowserView({
   active,
 }: BrowserViewProps): React.JSX.Element | null {
   const webviewRef = useRef<WebviewTag>(null)
+  const initialUrl = useRef(tab.url)
+  const attachWebview = useCallback((webview: WebviewTag | null): void => {
+    webviewRef.current = webview
+    if (!webview) return
+
+    // Electron requires popup opt-in before the guest is attached. The main
+    // process still denies every unmanaged window and routes allowed URLs.
+    webview.setAttribute("allowpopups", "")
+    webview.setAttribute("src", initialUrl.current)
+  }, [])
   useWebviewEvents({ webviewRef, tab, active })
 
   if (tab.lifecycleState === "frozen") return null
@@ -26,9 +36,8 @@ export const BrowserView = memo(function BrowserView({
   return (
     <div className="photon-browser-view" style={style}>
       <webview
-        ref={webviewRef}
+        ref={attachWebview}
         className="photon-webview"
-        src={tab.url}
         tabIndex={active ? 0 : -1}
         onFocus={() => {
           if (active) webviewRef.current?.focus()
