@@ -16,7 +16,7 @@ export function FindBar({ controller, loading }: FindBarProps): React.JSX.Elemen
 
   const hasMatches = state.matches > 0
   return (
-    <div className="photon-find-bar" role="search" aria-label="Find in page">
+    <div className="photon-popover-surface photon-find-bar" role="search" aria-label="Find in page">
       <input
         ref={inputRef}
         aria-label="Find in page"

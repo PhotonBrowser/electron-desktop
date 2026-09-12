@@ -89,7 +89,7 @@ function SiteSecurityPopover({
       <section
         ref={popoverRef}
         aria-label={`Site information for ${siteSecurity.host}`}
-        className="photon-site-security-popover z-50"
+        className="photon-popover-surface photon-site-security-popover z-50"
         role="dialog"
         style={{ left: position.left, top: position.top }}
       >
@@ -97,7 +97,7 @@ function SiteSecurityPopover({
           <strong>{siteSecurity.host}</strong>
           <button
             aria-label="Close site information"
-            className="photon-site-security-close"
+            className="photon-icon-button photon-site-security-close"
             type="button"
             onClick={onClose}
           >

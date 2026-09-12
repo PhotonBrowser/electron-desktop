@@ -110,7 +110,7 @@ export function SettingsPage(): React.JSX.Element {
                 <Select.Value />
                 <Select.Indicator className="photon-theme-indicator" />
               </Select.Trigger>
-              <Select.Popover className="photon-theme-popover">
+              <Select.Popover className="photon-popover-surface photon-theme-popover">
                 <ListBox>
                   <ListBox.Item id="system">System</ListBox.Item>
                   <ListBox.Item id="light">Light</ListBox.Item>

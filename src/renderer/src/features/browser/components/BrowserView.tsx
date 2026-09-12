@@ -91,7 +91,11 @@ export const BrowserView = memo(function BrowserView({
         <div className="browser-error-state" role="alert">
           <strong>{tab.crashed ? "This tab has crashed" : "Unable to load this page"}</strong>
           {tab.error ? <span>{tab.error}</span> : null}
-          <button type="button" onClick={() => void window.photon.navigation.reload()}>
+          <button
+            className="photon-button"
+            type="button"
+            onClick={() => void window.photon.navigation.reload()}
+          >
             Reload
           </button>
         </div>

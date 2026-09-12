@@ -5,7 +5,6 @@
   --color-panel: var(--photon-color-surface);
   --color-fg: var(--photon-color-text-primary);
   --color-line: var(--photon-color-border);
-  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 18%), 0 1px 2px rgb(0 0 0 / 12%);
 }
 
 html,
@@ -75,6 +74,11 @@ body,
   --photon-radius-control: 8px;
   --photon-radius-field: 10px;
   --photon-radius-panel: 16px;
+  --photon-radius-popover: var(--photon-radius-control);
+  --photon-radius-menu-item: var(--photon-space-1);
+  --photon-radius-pill: 999px;
+  --photon-radius-circle: 50%;
+  --photon-focus-ring: 2px solid var(--photon-color-accent);
   --photon-radius-window: 12px;
   --photon-radius-inner-window: calc(var(--photon-radius-window) - var(--photon-window-inset));
   --photon-color-canvas: #f6f7f7;
@@ -88,6 +92,7 @@ body,
   --photon-color-danger: #c73838;
   --photon-color-on-danger: #ffffff;
   --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 10%);
+  --photon-shadow-popover: 0 8px 24px rgb(0 0 0 / 18%), 0 1px 2px rgb(0 0 0 / 12%);
   /* Keep HeroUI components on Photon’s semantic color roles. */
   --background: var(--photon-color-canvas);
   --foreground: var(--photon-color-text-primary);
@@ -126,6 +131,7 @@ body,
     --photon-color-danger: #ef8a8a;
     --photon-color-on-danger: #291010;
     --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 30%);
+    --photon-shadow-popover: 0 8px 24px rgb(0 0 0 / 36%), 0 1px 2px rgb(0 0 0 / 24%);
   }
 }
 
@@ -140,6 +146,7 @@ body,
   --photon-color-accent: #2851b8;
   --photon-color-on-accent: #ffffff;
   --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 10%);
+  --photon-shadow-popover: 0 8px 24px rgb(0 0 0 / 18%), 0 1px 2px rgb(0 0 0 / 12%);
 }
 
 :root[data-theme="dark"] {
@@ -155,6 +162,7 @@ body,
   --photon-color-danger: #ef8a8a;
   --photon-color-on-danger: #291010;
   --photon-shadow-panel: 0 1px 2px rgb(0 0 0 / 30%);
+  --photon-shadow-popover: 0 8px 24px rgb(0 0 0 / 36%), 0 1px 2px rgb(0 0 0 / 24%);
 }
 
 body {
@@ -293,6 +301,11 @@ select {
   color: var(--photon-color-text-primary);
 }
 
+.photon-tab:focus-visible {
+  outline: var(--photon-focus-ring);
+  outline-offset: -2px;
+}
+
 .photon-tab-layout[data-drag-over="true"] .photon-tab {
   border-color: var(--photon-color-border);
   box-shadow: inset 0 0 0 1px var(--photon-color-border);
@@ -363,9 +376,10 @@ select {
   height: var(--photon-tab-close-size);
   place-items: center;
   border: 0;
-  border-radius: var(--photon-radius-control);
+  min-width: var(--photon-tab-close-size);
+  border-radius: var(--photon-radius-control) !important;
   background: transparent;
-  color: inherit;
+  color: inherit !important;
   cursor: pointer;
 }
 
@@ -374,11 +388,39 @@ select {
 }
 
 .photon-icon-button {
+  display: grid;
+  width: var(--photon-control-size);
+  min-width: var(--photon-control-size) !important;
+  min-height: var(--photon-control-size);
+  height: var(--photon-control-size);
+  padding: 0;
+  place-items: center;
+  border: 0 !important;
+  border-radius: var(--photon-radius-control) !important;
+  background: transparent !important;
+  color: var(--photon-color-text-primary) !important;
+  cursor: pointer;
   will-change: auto;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
     color var(--photon-motion-quick) var(--photon-motion-ease),
     transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-icon-button:hover:not([data-disabled="true"]),
+.photon-icon-button[data-hovered="true"]:not([data-disabled="true"]) {
+  background: var(--photon-color-surface-hover) !important;
+}
+
+.photon-icon-button:focus-visible,
+.photon-icon-button[data-focus-visible="true"] {
+  outline: var(--photon-focus-ring);
+  outline-offset: -2px;
+}
+
+.photon-icon-button[data-disabled="true"] {
+  color: var(--photon-color-text-secondary) !important;
+  cursor: default;
 }
 
 .photon-icon-button:active,
@@ -387,19 +429,8 @@ select {
 }
 
 .photon-new-tab {
-  width: var(--photon-control-size);
-  min-width: var(--photon-control-size);
-  height: var(--photon-control-size);
   flex: 0 0 auto;
-  border-radius: var(--photon-radius-control) !important;
-  background: transparent !important;
-  border: 0 !important;
   box-shadow: none !important;
-  color: var(--photon-color-text-primary);
-  transition:
-    background-color var(--photon-motion-quick) var(--photon-motion-ease),
-    color var(--photon-motion-quick) var(--photon-motion-ease),
-    transform var(--photon-motion-micro) var(--photon-motion-ease);
 }
 
 .photon-new-tab-layout {
@@ -422,29 +453,13 @@ select {
 }
 
 .photon-window-control {
-  display: grid;
-  width: var(--photon-control-size);
-  min-width: var(--photon-control-size);
-  height: var(--photon-control-size);
-  place-items: center;
-  border: 0;
-  border-radius: var(--photon-radius-control);
-  background: transparent;
-  color: var(--photon-color-text-primary);
-  cursor: pointer;
-  transition:
-    background-color var(--photon-motion-quick) var(--photon-motion-ease),
-    color var(--photon-motion-quick) var(--photon-motion-ease),
-    transform var(--photon-motion-micro) var(--photon-motion-ease);
+  flex: 0 0 var(--photon-control-size);
 }
 
-.photon-window-control:hover {
-  background: var(--photon-color-surface-hover);
-}
-
-.photon-window-control-close:hover {
+.photon-window-control-close:hover:not([data-disabled="true"]),
+.photon-window-control-close[data-hovered="true"]:not([data-disabled="true"]) {
   background: var(--photon-color-danger);
-  color: var(--photon-color-on-danger);
+  color: var(--photon-color-on-danger) !important;
 }
 
 .photon-toolbar {
@@ -464,36 +479,13 @@ select {
 }
 
 .photon-toolbar-button {
-  display: grid;
-  width: var(--photon-control-size);
-  min-width: var(--photon-control-size) !important;
-  height: var(--photon-control-size);
-  min-height: var(--photon-control-size);
-  padding: 0;
-  place-items: center;
-  background: transparent !important;
-  border-radius: var(--photon-radius-control);
-  color: var(--photon-color-text-primary);
-  transition:
-    background-color var(--photon-motion-quick) var(--photon-motion-ease),
-    color var(--photon-motion-quick) var(--photon-motion-ease),
-    transform var(--photon-motion-micro) var(--photon-motion-ease);
-}
-
-.photon-toolbar-button:hover,
-.photon-toolbar-button[data-hovered="true"] {
-  background: var(--photon-color-surface-hover) !important;
 }
 
 .photon-toolbar-button:active,
 .photon-toolbar-button[data-pressed="true"] {
   background: var(--photon-color-canvas) !important;
-  color: var(--photon-color-text-primary);
+  color: var(--photon-color-text-primary) !important;
   transform: scale(0.96);
-}
-
-.photon-toolbar-button[data-disabled="true"] {
-  color: var(--photon-color-text-secondary);
 }
 
 .photon-browser-menu-trigger {
@@ -520,17 +512,24 @@ select {
   color: var(--photon-color-text-primary) !important;
 }
 
+.photon-popover-surface {
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-popover) !important;
+  background: var(--photon-color-surface) !important;
+  color: var(--photon-color-text-primary);
+  box-shadow: var(--photon-shadow-popover) !important;
+}
+
 .photon-dropdown-popover {
   min-width: var(--photon-menu-min-width);
   padding: var(--photon-popover-padding);
-  border-radius: var(--photon-radius-control);
 }
 
 .photon-dropdown-item {
   min-height: var(--photon-field-height);
   gap: var(--photon-space-2);
   padding-inline: var(--photon-space-2);
-  border-radius: var(--photon-space-1);
+  border-radius: var(--photon-radius-menu-item);
   font-size: 13px;
 }
 
@@ -585,7 +584,7 @@ select {
 }
 
 .photon-address-icon-button:focus-visible {
-  outline: 2px solid var(--photon-color-accent);
+  outline: var(--photon-focus-ring);
   outline-offset: -2px;
 }
 
@@ -597,12 +596,6 @@ select {
   position: fixed;
   width: min(var(--photon-site-popover-width), calc(100vw - (var(--photon-space-4) * 2)));
   overflow: hidden;
-  border-radius: var(--photon-radius-panel);
-  background: var(--photon-color-surface);
-  color: var(--photon-color-text-primary);
-  box-shadow:
-    0 8px 24px rgb(0 0 0 / 18%),
-    0 1px 2px rgb(0 0 0 / 12%);
   pointer-events: auto;
 }
 
@@ -631,20 +624,16 @@ select {
   height: var(--photon-control-size);
   flex: 0 0 var(--photon-control-size);
   place-items: center;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--photon-color-text-secondary);
-  cursor: pointer;
+  color: var(--photon-color-text-secondary) !important;
 }
 
 .photon-site-security-close:hover {
   background: var(--photon-color-surface-hover);
-  color: var(--photon-color-text-primary);
+  color: var(--photon-color-text-primary) !important;
 }
 
 .photon-site-security-close:focus-visible {
-  outline: 2px solid var(--photon-color-accent);
+  outline: var(--photon-focus-ring);
   outline-offset: -2px;
 }
 
@@ -753,10 +742,6 @@ select {
   align-items: center;
   gap: var(--photon-space-1);
   padding: var(--photon-space-1);
-  border: 1px solid var(--photon-color-border);
-  border-radius: var(--photon-radius-panel);
-  background: var(--photon-color-surface);
-  box-shadow: var(--photon-shadow-panel);
   animation: photon-find-enter var(--photon-motion-enter) var(--photon-motion-ease);
 }
 
@@ -803,6 +788,33 @@ select {
   background: var(--photon-color-surface-hover) !important;
 }
 
+.photon-button {
+  min-height: var(--photon-field-height);
+  padding-inline: var(--photon-space-3);
+  border: 1px solid var(--photon-color-border);
+  border-radius: var(--photon-radius-control);
+  background: var(--photon-color-surface);
+  color: var(--photon-color-text-primary);
+  cursor: pointer;
+  transition:
+    background-color var(--photon-motion-quick) var(--photon-motion-ease),
+    border-color var(--photon-motion-quick) var(--photon-motion-ease),
+    transform var(--photon-motion-micro) var(--photon-motion-ease);
+}
+
+.photon-button:hover {
+  background: var(--photon-color-surface-hover);
+}
+
+.photon-button:active {
+  transform: scale(0.96);
+}
+
+.photon-button:focus-visible {
+  outline: var(--photon-focus-ring);
+  outline-offset: 2px;
+}
+
 @keyframes photon-find-enter {
   from {
     opacity: 0;
@@ -832,15 +844,8 @@ select {
   color: var(--photon-color-text-secondary);
 }
 
-.browser-error-state button {
+.browser-error-state .photon-button {
   justify-self: center;
-  min-height: var(--photon-field-height);
-  padding-inline: var(--photon-space-3);
-  border: 1px solid var(--photon-color-border);
-  border-radius: var(--photon-radius-control);
-  background: var(--photon-color-surface);
-  color: var(--photon-color-text-primary);
-  cursor: pointer;
 }
 
 .perf-overlay {
@@ -850,7 +855,7 @@ select {
   max-height: calc(100% - 48px);
   overflow: auto;
   padding: var(--photon-space-1) var(--photon-space-2);
-  border-radius: var(--photon-space-1);
+  border-radius: var(--photon-radius-menu-item);
   background: rgb(0 0 0 / 60%);
   color: #ccc;
   font-family: monospace;
@@ -1034,7 +1039,7 @@ select {
   display: block;
   width: 26px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: var(--photon-radius-pill);
   background: var(--photon-color-text-secondary);
   transition: background-color var(--photon-motion-quick) var(--photon-motion-ease);
 }
@@ -1049,7 +1054,7 @@ select {
   width: 12px;
   height: 12px;
   margin: 2px;
-  border-radius: 50%;
+  border-radius: var(--photon-radius-circle);
   background: var(--photon-color-canvas);
   box-shadow: var(--photon-shadow-panel);
   transform: translateX(0);
@@ -1086,7 +1091,7 @@ select {
   margin-top: 2px;
   place-items: center;
   border: 2px solid var(--photon-color-text-secondary);
-  border-radius: 50%;
+  border-radius: var(--photon-radius-circle);
   background: transparent;
   transition:
     background-color var(--photon-motion-quick) var(--photon-motion-ease),
@@ -1166,7 +1171,7 @@ select {
   min-height: var(--photon-field-height);
   height: var(--photon-field-height);
   padding-inline: var(--photon-space-3) var(--photon-space-8);
-  border-radius: var(--photon-radius-control);
+  border-radius: var(--photon-radius-field) !important;
   border-color: var(--photon-color-border);
   background: var(--photon-color-canvas) !important;
   color: var(--photon-color-text-primary);
@@ -1182,19 +1187,21 @@ select {
   background: var(--photon-color-surface-hover) !important;
 }
 
+.photon-theme-trigger:focus-visible,
+.photon-theme-trigger[data-focus-visible="true"] {
+  outline: var(--photon-focus-ring);
+  outline-offset: -2px;
+}
+
 .photon-theme-popover {
   min-width: var(--photon-theme-control-width);
   padding: var(--photon-popover-padding);
-  border: 1px solid var(--photon-color-border);
-  border-radius: var(--photon-radius-control);
-  background: var(--photon-color-surface) !important;
-  color: var(--photon-color-text-primary);
 }
 
 .photon-theme-popover .menu-item {
   min-height: var(--photon-field-height);
   padding-inline: var(--photon-space-2);
-  border-radius: var(--photon-space-1);
+  border-radius: var(--photon-radius-menu-item);
 }
 
 .photon-theme-popover .menu-item[data-focused="true"] {
