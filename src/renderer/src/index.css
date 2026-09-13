@@ -500,16 +500,40 @@ select {
   width: 22px;
   height: 22px;
   place-items: center;
+  line-height: 0;
 }
 
-.photon-downloads-anchor[data-indicator="active"] .photon-downloads-icon-wrap::before {
+.photon-download-progress-ring {
   position: absolute;
-  inset: -3px;
-  border: 1.5px solid var(--photon-color-accent);
-  border-top-color: transparent;
-  border-radius: var(--photon-radius-circle);
-  content: "";
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.photon-download-progress-ring circle {
+  fill: none;
+  stroke-width: 3.25;
+}
+
+.photon-download-progress-ring-track {
+  stroke: var(--photon-color-accent);
+  opacity: 0.2;
+}
+
+.photon-download-progress-ring-value {
+  stroke: var(--photon-color-accent);
+  transition: stroke-dashoffset var(--photon-motion-quick) var(--photon-motion-ease);
+}
+
+.photon-download-progress-ring.is-indeterminate {
   animation: photon-downloads-spin 1.2s linear infinite;
+}
+
+.photon-download-progress-ring.is-indeterminate .photon-download-progress-ring-value {
+  stroke-dasharray: 18 57;
 }
 
 .photon-downloads-anchor[data-indicator="finished"] .photon-downloads-icon-wrap::after {
@@ -551,7 +575,8 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .photon-downloads-anchor,
-  .photon-downloads-anchor[data-indicator="active"] .photon-downloads-icon-wrap::before,
+  .photon-download-progress-ring,
+  .photon-download-progress-ring-value,
   .photon-download-progress span,
   .photon-dropdown-popover {
     animation: none;
